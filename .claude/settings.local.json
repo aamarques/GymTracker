@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(chmod:*)",
+      "Bash(docker:*)",
+      "Bash(podman:*)",
+      "Read(//etc/containers/**)",
+      "Bash(systemctl:*)",
+      "Bash(docker-compose:*)",
+      "Bash(sudo nft list:*)",
+      "Bash(export DOCKER_BUILDKIT=0)",
+      "Bash(export COMPOSE_DOCKER_CLI_BUILD=0)",
+      "Read(//etc/**)",
+      "Bash(/mnt/c/Users/Alexandre/WSL_HOME/Gym/start-containers.sh:*)",
+      "Bash(localhost/gym_backend:latest)",
+      "Bash(pod man run:*)",
+      "Bash(curl:*)",
+      "Bash(bash:*)",
+      "Bash(python3:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
