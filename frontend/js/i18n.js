@@ -19,8 +19,10 @@ const translations = {
         'auth.login': 'Login',
         'auth.register': 'Register',
         'auth.email': 'Email',
+        'auth.username': 'Username',
         'auth.password': 'Password',
-        'auth.name': 'Name',
+        'auth.name': 'Full Name',
+        'auth.full_name': 'Full Name',
         'auth.role': 'Account Type',
         'auth.role.personal_trainer': 'Personal Trainer',
         'auth.role.client': 'Client',
@@ -125,6 +127,10 @@ const translations = {
         'clients.assigned_exercises': 'Assigned Exercises',
         'clients.no_clients': 'No clients yet',
         'clients.no_clients_msg': 'When clients register with your trainer ID, they will appear here.',
+        'clients.add_client': 'Add Client',
+        'clients.create_workout': 'Create Workout',
+        'clients.remove': 'Remove',
+        'clients.your_clients': 'Your Clients',
 
         // Common
         'common.save': 'Save',
@@ -155,8 +161,10 @@ const translations = {
         'auth.login': 'Entrar',
         'auth.register': 'Registrar',
         'auth.email': 'Email',
+        'auth.username': 'Usuário',
         'auth.password': 'Senha',
-        'auth.name': 'Nome',
+        'auth.name': 'Nome Completo',
+        'auth.full_name': 'Nome Completo',
         'auth.role': 'Tipo de Conta',
         'auth.role.personal_trainer': 'Personal Trainer',
         'auth.role.client': 'Cliente',
@@ -261,6 +269,10 @@ const translations = {
         'clients.assigned_exercises': 'Exercícios Atribuídos',
         'clients.no_clients': 'Nenhum cliente ainda',
         'clients.no_clients_msg': 'Quando os clientes se registrarem com seu ID de treinador, eles aparecerão aqui.',
+        'clients.add_client': 'Adicionar Cliente',
+        'clients.create_workout': 'Criar Treino',
+        'clients.remove': 'Remover',
+        'clients.your_clients': 'Seus Clientes',
 
         // Common
         'common.save': 'Salvar',
@@ -320,10 +332,13 @@ function updatePageTranslations() {
 
         // Update text content or placeholder based on element type
         if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
-            if (element.placeholder) {
-                element.placeholder = translation;
-            }
+            // Always update placeholder for input/textarea
+            element.placeholder = translation;
+        } else if (element.tagName === 'OPTION') {
+            // Update text content for option elements
+            element.textContent = translation;
         } else {
+            // Update text content for other elements (labels, buttons, etc.)
             element.textContent = translation;
         }
     });

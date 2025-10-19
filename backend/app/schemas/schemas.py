@@ -6,6 +6,7 @@ from app.models.models import UserRole
 
 # User Schemas
 class UserBase(BaseModel):
+    username: str
     email: EmailStr
     name: str
     role: UserRole
@@ -35,6 +36,7 @@ class UserCreate(UserBase):
 
 
 class UserUpdate(BaseModel):
+    username: Optional[str] = None
     name: Optional[str] = None
     language: Optional[str] = None
     weight: Optional[float] = Field(None, gt=0)
@@ -81,7 +83,7 @@ class TokenData(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    email: str  # Changed from EmailStr to str to allow username
     password: str
 
 
@@ -143,6 +145,7 @@ class WorkoutPlanBase(BaseModel):
 
 
 class WorkoutPlanCreate(WorkoutPlanBase):
+    client_id: Optional[str] = None  # For PTs creating plans for clients
     exercises: List[PlanExerciseCreate] = []
 
 

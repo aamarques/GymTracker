@@ -1,22 +1,27 @@
 # Gym Workout Tracker
 
-**Version 0.1.1** - Multi-Tenant Fitness Management Platform
+**Version 0.1.2** - Enhanced Role-Based Workflow & Client Management
 
-A full-stack web application for Personal Trainers and Clients to manage workouts, exercises, and progress tracking with multi-tenant architecture and internationalization support.
+A full-stack web application for Personal Trainers and Clients to manage workouts, exercises, and progress tracking with multi-tenant architecture, internationalization support, and streamlined role-based workflows.
 
 ## Features
 
-### 🆕 Multi-Tenant System (V0.1.0)
+### 🆕 Enhanced Role-Based System (V0.1.2)
 - **Personal Trainer Role:**
   - Create and manage exercise library
-  - View and manage assigned clients
-  - Assign exercises to specific clients with custom instructions
-  - Track client progress and assignments
+  - Add/remove clients from roster
+  - Create custom workout plans for each client
+  - Define exercises, sets, reps, weight, and rest time per workout
+  - Mark workout plans as active for client's default
+  - Dedicated tabs: Dashboard, Exercises, My Clients, Profile
 - **Client Role:**
-  - Register with a Personal Trainer
-  - View only exercises assigned by PT
-  - Create workout plans from assigned exercises
-  - Track personal workouts and progress
+  - Self-registration with username and email
+  - View assigned workout plans from Personal Trainer
+  - Start workout sessions directly from "Treino Ativo" (Active Workout)
+  - Real-time workout timer and exercise logging
+  - Track cardio sessions
+  - Health metrics analysis with BMI and weight goal tracking
+  - Dedicated tabs: Dashboard, Active Workout, Cardio, Profile
 
 ### 🌍 Internationalization (V0.1.0)
 - Support for English and Portuguese languages
@@ -449,7 +454,53 @@ For issues and questions:
 
 ## Version History
 
-### Version 0.1.1 (October 2025) - Current
+### Version 0.1.2 (January 2025) - Current
+**Enhanced Role-Based Workflow & Client Management:**
+
+**🔐 Authentication & User Management:**
+- ✅ Added username field to user model with unique constraint
+- ✅ Login with username OR email support
+- ✅ Automatic username generation for existing users (migration)
+- ✅ Username editing in user profile
+- ✅ Role-based registration fields (health fields only for clients)
+- ✅ Removed PT ID from client registration (PTs now assign clients)
+
+**👥 Client Management (Personal Trainers):**
+- ✅ "Add Client" functionality - PTs can add/remove clients
+- ✅ Client roster management in "My Clients" tab
+- ✅ Create workout plans directly for specific clients
+- ✅ View client details (BMI, weight, height)
+- ✅ Workout plans assigned to clients (not PTs)
+
+**🏋️ Workout Management:**
+- ✅ Workout plan creation with active/inactive toggle
+- ✅ Active workout plans marked as default for clients
+- ✅ Fixed workout plan deletion (JSON error resolved)
+- ✅ Automatic workout session start from plan selection
+- ✅ Real-time workout timer and exercise logging
+- ✅ Clients see their assigned plans in "Treino Ativo" (Active Workout)
+
+**📊 Role-Based UI:**
+- ✅ Personal Trainers see: Dashboard, Exercises, My Clients, Profile
+- ✅ Clients see: Dashboard (with health metrics), Active Workout, Cardio, Profile
+- ✅ Hidden "Treinos" tab (replaced by client-specific workflow)
+- ✅ Health metrics and BMI only for clients
+- ✅ Exercise library only accessible to Personal Trainers
+
+**🌍 Internationalization:**
+- ✅ Added translations for client management buttons
+- ✅ Translated "Add Client", "Create Workout", "Remove" buttons
+- ✅ Updated Portuguese translations for new features
+- ✅ Better placeholder and label translations
+
+**🎨 UX Improvements:**
+- ✅ Improved checkbox formatting for "Set as Active Plan"
+- ✅ Clear workflow: PT → My Clients → Create Workout → Client sees in Active Workout
+- ✅ Registration form auto-clears after successful signup
+- ✅ Conditional field visibility based on user role
+- ✅ Better error messages and user feedback
+
+### Version 0.1.1 (October 2025)
 **Bug Fixes & UX Improvements:**
 - ✅ Fixed nginx configuration for Docker container networking
 - ✅ Fixed database enum type mismatch (role field)

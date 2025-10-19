@@ -21,9 +21,28 @@ async def create_workout_plan(
     db: Session = Depends(get_db)
 ):
     """Create a new workout plan"""
+    # Determine the user_id for the workout plan
+    target_user_id = current_user.id
+
+    # If client_id is provided and user is a PT, create plan for that client
+    if plan_data.client_id and current_user.role == UserRole.PERSONAL_TRAINER:
+        # Verify the client belongs to this PT
+        client = db.query(User).filter(
+            User.id == plan_data.client_id,
+            User.personal_trainer_id == current_user.id
+        ).first()
+
+        if not client:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="This client is not assigned to you"
+            )
+
+        target_user_id = plan_data.client_id
+
     # Create workout plan
     new_plan = WorkoutPlan(
-        user_id=current_user.id,
+        user_id=target_user_id,
         name=plan_data.name,
         description=plan_data.description,
         is_active=plan_data.is_active

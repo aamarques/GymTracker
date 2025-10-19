@@ -21,8 +21,8 @@
                 <h2 data-i18n="auth.login">Login</h2>
                 <form id="login">
                     <div class="form-group">
-                        <label for="login-email" data-i18n="auth.email">Email</label>
-                        <input type="email" id="login-email" required>
+                        <label for="login-email">Username or Email</label>
+                        <input type="text" id="login-email" placeholder="Username or Email" required>
                     </div>
                     <div class="form-group">
                         <label for="login-password" data-i18n="auth.password">Password</label>
@@ -41,12 +41,16 @@
                 <h2 data-i18n="auth.register">Register</h2>
                 <form id="register">
                     <div class="form-group">
-                        <label for="register-name" data-i18n="auth.name">Full Name</label>
-                        <input type="text" id="register-name" required>
+                        <label for="register-name" data-i18n="auth.full_name">Full Name</label>
+                        <input type="text" id="register-name" data-i18n="auth.full_name" placeholder="Full Name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-username" data-i18n="auth.username">Username</label>
+                        <input type="text" id="register-username" data-i18n="auth.username" placeholder="Username" required>
                     </div>
                     <div class="form-group">
                         <label for="register-email" data-i18n="auth.email">Email</label>
-                        <input type="email" id="register-email" required>
+                        <input type="email" id="register-email" data-i18n="auth.email" placeholder="Email" required>
                     </div>
                     <div class="form-group">
                         <label for="register-password" data-i18n="auth.password">Password</label>
@@ -66,22 +70,18 @@
                             <option value="pt">Português</option>
                         </select>
                     </div>
-                    <div class="form-group" id="pt-id-group" style="display: none;">
-                        <label for="register-pt-id" data-i18n="auth.personal_trainer_id">Personal Trainer ID (optional)</label>
-                        <input type="text" id="register-pt-id" placeholder="Enter your PT's ID">
-                    </div>
-                    <div class="form-group">
+                    <div class="form-group" id="dob-group">
                         <label for="register-dob" data-i18n="auth.date_of_birth">Date of Birth</label>
-                        <input type="date" id="register-dob" required>
+                        <input type="date" id="register-dob">
                     </div>
-                    <div class="form-row">
+                    <div class="form-row" id="weight-height-row">
                         <div class="form-group">
                             <label for="register-weight" data-i18n="auth.weight">Weight (kg)</label>
-                            <input type="number" id="register-weight" step="0.1" required>
+                            <input type="number" id="register-weight" step="0.1">
                         </div>
                         <div class="form-group">
                             <label for="register-height" data-i18n="auth.height">Height (cm)</label>
-                            <input type="number" id="register-height" step="0.1" required>
+                            <input type="number" id="register-height" step="0.1">
                         </div>
                     </div>
                     <div class="form-group">
@@ -152,6 +152,14 @@
                 <div id="weight-goal-card" class="goal-card" style="display: none;">
                     <h3>Weight Goal Progress</h3>
                     <div id="weight-goal-content"></div>
+                </div>
+
+                <!-- Health Metrics Analysis for Clients -->
+                <div id="dashboard-health-metrics" class="health-metrics-section" style="display: none;">
+                    <h3 data-i18n="profile.health_metrics">Health Metrics Analysis</h3>
+                    <div id="dashboard-health-metrics-container">
+                        <p class="loading" data-i18n="common.loading">Loading health metrics...</p>
+                    </div>
                 </div>
             </div>
 
@@ -244,7 +252,11 @@
                                 <input type="email" id="profile-email" readonly>
                             </div>
                             <div class="form-group">
-                                <label for="profile-name">Name</label>
+                                <label for="profile-username" data-i18n="auth.username">Username</label>
+                                <input type="text" id="profile-username" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="profile-name" data-i18n="auth.full_name">Full Name</label>
                                 <input type="text" id="profile-name" required>
                             </div>
                             <div class="form-group">

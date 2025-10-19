@@ -28,6 +28,19 @@ async def update_profile(
     db: Session = Depends(get_db)
 ):
     """Update current user profile"""
+    # Check if username is being updated and if it's already taken
+    if user_update.username is not None and user_update.username != current_user.username:
+        existing_username = db.query(User).filter(
+            User.username == user_update.username,
+            User.id != current_user.id
+        ).first()
+        if existing_username:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username already taken"
+            )
+        current_user.username = user_update.username
+
     if user_update.name is not None:
         current_user.name = user_update.name
     if user_update.language is not None:
@@ -284,3 +297,71 @@ async def get_client_detail(
     response.personal_trainer_name = current_user.name
 
     return response
+
+
+@router.get("/available-clients", response_model=List[ClientListResponse])
+async def get_available_clients(
+    current_user: User = Depends(require_personal_trainer),
+    db: Session = Depends(get_db)
+):
+    """Get all clients without a personal trainer"""
+    available_clients = db.query(User).filter(
+        User.role == UserRole.CLIENT,
+        User.personal_trainer_id.is_(None)
+    ).all()
+
+    return available_clients
+
+
+@router.post("/clients/{client_id}/assign")
+async def assign_client_to_trainer(
+    client_id: str,
+    current_user: User = Depends(require_personal_trainer),
+    db: Session = Depends(get_db)
+):
+    """Assign a client to the current personal trainer"""
+    client = db.query(User).filter(
+        User.id == client_id,
+        User.role == UserRole.CLIENT
+    ).first()
+
+    if not client:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Client not found"
+        )
+
+    if client.personal_trainer_id is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Client already has a personal trainer"
+        )
+
+    client.personal_trainer_id = current_user.id
+    db.commit()
+
+    return {"message": "Client assigned successfully"}
+
+
+@router.delete("/clients/{client_id}/unassign")
+async def unassign_client_from_trainer(
+    client_id: str,
+    current_user: User = Depends(require_personal_trainer),
+    db: Session = Depends(get_db)
+):
+    """Remove a client from the current personal trainer"""
+    from app.core.permissions import check_client_belongs_to_trainer
+
+    client = db.query(User).filter(User.id == client_id).first()
+    if not client:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Client not found"
+        )
+
+    check_client_belongs_to_trainer(client, current_user)
+
+    client.personal_trainer_id = None
+    db.commit()
+
+    return {"message": "Client unassigned successfully"}

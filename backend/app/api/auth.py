@@ -44,6 +44,14 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
             detail="Email already registered"
         )
 
+    # Check if username already exists
+    existing_username = db.query(User).filter(User.username == user_data.username).first()
+    if existing_username:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already taken"
+        )
+
     # Validate password strength
     if not validate_password_strength(user_data.password):
         raise HTTPException(
@@ -52,21 +60,19 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
         )
 
     # Create new user
-    # SECURITY: Force role to CLIENT to prevent privilege escalation
-    # Users cannot self-assign PERSONAL_TRAINER role during registration
     hashed_password = get_password_hash(user_data.password)
     new_user = User(
+        username=user_data.username,
         email=user_data.email,
         hashed_password=hashed_password,
         name=user_data.name,
-        role=UserRole.CLIENT,  # Force CLIENT role for all registrations
-        language=user_data.language,  # Allow language selection
+        role=user_data.role,  # Allow user to choose role
+        language=user_data.language,
         date_of_birth=user_data.date_of_birth,
         weight=user_data.weight,
         height=user_data.height,
-        phone=user_data.phone
-        # personal_trainer_id is intentionally NOT set from user input
-        # It must be NULL for self-registration; only admins can assign PTs
+        phone=user_data.phone,
+        personal_trainer_id=user_data.personal_trainer_id
     )
 
     db.add(new_user)
@@ -84,12 +90,15 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
 @router.post("/login", response_model=Token)
 async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     """Login user and return JWT token"""
-    user = db.query(User).filter(User.email == login_data.email).first()
+    # Check if login identifier is email or username
+    user = db.query(User).filter(
+        (User.email == login_data.email) | (User.username == login_data.email)
+    ).first()
 
     if not user or not verify_password(login_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
+            detail="Incorrect username/email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -107,12 +116,15 @@ async def login_oauth(
     db: Session = Depends(get_db)
 ):
     """OAuth2 compatible token endpoint"""
-    user = db.query(User).filter(User.email == form_data.username).first()
+    # Check if login identifier is email or username
+    user = db.query(User).filter(
+        (User.email == form_data.username) | (User.username == form_data.username)
+    ).first()
 
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
+            detail="Incorrect username/email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
