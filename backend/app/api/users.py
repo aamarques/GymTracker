@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from typing import List
 from app.db.database import get_db
-from app.models.models import User
-from app.schemas.schemas import UserResponse, UserUpdate, DashboardStats, HealthMetrics
+from app.models.models import User, UserRole
+from app.schemas.schemas import UserResponse, UserUpdate, DashboardStats, HealthMetrics, ClientListResponse
 from app.core.security import get_current_user
+from app.core.permissions import require_personal_trainer
 from app.api.auth import calculate_bmi, calculate_age
 from datetime import datetime, timedelta
 
@@ -28,6 +30,8 @@ async def update_profile(
     """Update current user profile"""
     if user_update.name is not None:
         current_user.name = user_update.name
+    if user_update.language is not None:
+        current_user.language = user_update.language
     if user_update.weight is not None:
         current_user.weight = user_update.weight
     if user_update.height is not None:
@@ -43,6 +47,8 @@ async def update_profile(
     response = UserResponse.from_orm(current_user)
     response.bmi = calculate_bmi(current_user.weight, current_user.height)
     response.age = calculate_age(current_user.date_of_birth)
+    if current_user.personal_trainer:
+        response.personal_trainer_name = current_user.personal_trainer.name
     return response
 
 
@@ -236,3 +242,45 @@ async def get_health_metrics(
         recommendation=recommendation,
         health_status=health_status
     )
+
+
+# ===== Client Management Endpoints (Personal Trainers) =====
+
+@router.get("/clients", response_model=List[ClientListResponse])
+async def get_my_clients(
+    current_user: User = Depends(require_personal_trainer),
+    db: Session = Depends(get_db)
+):
+    """Get all clients assigned to the current Personal Trainer"""
+    clients = db.query(User).filter(
+        User.personal_trainer_id == current_user.id,
+        User.role == UserRole.CLIENT
+    ).all()
+
+    return clients
+
+
+@router.get("/clients/{client_id}", response_model=UserResponse)
+async def get_client_detail(
+    client_id: str,
+    current_user: User = Depends(require_personal_trainer),
+    db: Session = Depends(get_db)
+):
+    """Get detailed information about a specific client"""
+    from app.core.permissions import check_client_belongs_to_trainer
+
+    client = db.query(User).filter(User.id == client_id).first()
+    if not client:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Client not found"
+        )
+
+    check_client_belongs_to_trainer(client, current_user)
+
+    response = UserResponse.from_orm(client)
+    response.bmi = calculate_bmi(client.weight, client.height)
+    response.age = calculate_age(client.date_of_birth)
+    response.personal_trainer_name = current_user.name
+
+    return response

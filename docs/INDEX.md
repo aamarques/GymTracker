@@ -6,6 +6,7 @@ Welcome to the Gym Workout Tracker documentation! This index will help you find 
 
 ### 🚀 Getting Started
 - **[Quick Start Guide](QUICK_START.md)** - Get running in 5 minutes
+- **[WSL2 + Podman Setup](WSL2_PODMAN_SETUP.md)** - WSL2/Podman configuration guide
 - **[Main README](../README.md)** - Project overview and features
 
 ### 💻 Development
@@ -100,6 +101,7 @@ Welcome to the Gym Workout Tracker documentation! This index will help you find 
 - [Deployment - Production Best Practices](DEPLOYMENT.md#production-best-practices)
 
 ### Troubleshooting
+- [WSL2 + Podman Setup](WSL2_PODMAN_SETUP.md) - WSL2/Podman specific issues
 - [Quick Start - Common Issues](QUICK_START.md#common-issues)
 - [README - Troubleshooting](../README.md#troubleshooting)
 - [Deployment - Troubleshooting Production Issues](DEPLOYMENT.md#troubleshooting-production-issues)
@@ -258,6 +260,11 @@ If you find errors or want to improve the documentation:
 ---
 
 ## Document History
+
+- **2025-10-19**: WSL2/Podman configuration guide added
+  - WSL2 + Podman Setup Guide
+  - Troubleshooting for netavark/nftables issues
+  - Privileged port binding solutions
 
 - **2025-10-12**: Initial comprehensive documentation created
   - Quick Start Guide

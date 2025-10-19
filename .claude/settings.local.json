@@ -18,7 +18,9 @@
       "Bash(pod man run:*)",
       "Bash(curl:*)",
       "Bash(bash:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Read(//home/aamarques/.config/containers/**)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkMTMzNWNkNy1lNDlmLTRlZWUtYjdkMS00MGRiYWU3ZmE5MjciLCJleHAiOjE3NjA4NjU2Mzh9.O1bzUJCWu8rNcIpVKr3QnHe7Kp3AL3NFQVMclnfArvY\")"
     ],
     "deny": [],
     "ask": []

@@ -1,17 +1,21 @@
 from pydantic import BaseModel, EmailStr, Field, validator
 from typing import Optional, List
 from datetime import datetime
+from app.models.models import UserRole
 
 
 # User Schemas
 class UserBase(BaseModel):
     email: EmailStr
     name: str
+    role: UserRole
+    language: str = "en"
     date_of_birth: datetime
     weight: float = Field(gt=0, description="Weight in kg")
     height: float = Field(gt=0, description="Height in cm")
     desired_weight: Optional[float] = Field(None, gt=0, description="Target weight goal in kg")
     phone: Optional[str] = None
+    personal_trainer_id: Optional[str] = None
 
 
 class UserCreate(UserBase):
@@ -23,13 +27,26 @@ class UserCreate(UserBase):
             raise ValueError('Password must be at least 8 characters long')
         return v
 
+    @validator('language')
+    def validate_language(cls, v):
+        if v not in ['en', 'pt']:
+            raise ValueError('Language must be either "en" or "pt"')
+        return v
+
 
 class UserUpdate(BaseModel):
     name: Optional[str] = None
+    language: Optional[str] = None
     weight: Optional[float] = Field(None, gt=0)
     height: Optional[float] = Field(None, gt=0)
     desired_weight: Optional[float] = Field(None, gt=0)
     phone: Optional[str] = None
+
+    @validator('language')
+    def validate_language(cls, v):
+        if v is not None and v not in ['en', 'pt']:
+            raise ValueError('Language must be either "en" or "pt"')
+        return v
 
 
 class UserResponse(UserBase):
@@ -37,6 +54,17 @@ class UserResponse(UserBase):
     created_at: datetime
     bmi: Optional[float] = None
     age: Optional[int] = None
+    personal_trainer_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class ClientListResponse(BaseModel):
+    id: str
+    name: str
+    email: str
+    created_at: datetime
 
     class Config:
         from_attributes = True
@@ -239,3 +267,24 @@ class DashboardStats(BaseModel):
     current_bmi: Optional[float] = None
     active_streak: int
     total_exercises: int
+
+
+# Assigned Exercise Schemas
+class AssignedExerciseBase(BaseModel):
+    exercise_id: str
+    client_id: str
+    notes: Optional[str] = None
+
+
+class AssignedExerciseCreate(AssignedExerciseBase):
+    pass
+
+
+class AssignedExerciseResponse(AssignedExerciseBase):
+    id: str
+    personal_trainer_id: str
+    assigned_at: datetime
+    exercise: Optional[ExerciseResponse] = None
+
+    class Config:
+        from_attributes = True

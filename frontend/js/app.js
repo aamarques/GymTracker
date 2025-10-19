@@ -95,7 +95,7 @@ async function login(email, password) {
     localStorage.setItem('authToken', authToken);
     await loadUser();
     showApp();
-    showAlert('Login successful!');
+    showAlert(t('common.success'));
 }
 
 async function register(userData) {
@@ -119,17 +119,49 @@ function logout() {
 async function loadUser() {
     currentUser = await apiRequest('/auth/me');
     document.getElementById('user-name').textContent = currentUser.name;
+
+    // Set language from user profile
+    if (currentUser.language) {
+        setLanguage(currentUser.language);
+    }
+
+    // Show/hide UI elements based on role
+    updateUIForRole();
+}
+
+function updateUIForRole() {
+    const isPersonalTrainer = currentUser.role === 'personal_trainer';
+
+    // Show/hide "My Clients" tab
+    const clientsTab = document.querySelector('[data-tab="clients"]');
+    if (clientsTab) {
+        clientsTab.style.display = isPersonalTrainer ? 'block' : 'none';
+    }
+
+    // Show/hide "Add Exercise" button
+    const addExerciseBtn = document.getElementById('add-exercise-btn');
+    if (addExerciseBtn) {
+        addExerciseBtn.style.display = isPersonalTrainer ? 'block' : 'none';
+    }
+
+    // Show total exercises stat for Personal Trainers
+    const exercisesStat = document.getElementById('stat-total-exercises');
+    if (exercisesStat) {
+        exercisesStat.style.display = isPersonalTrainer ? 'block' : 'none';
+    }
 }
 
 // UI State Management
 function showAuth() {
     document.getElementById('auth-screen').style.display = 'flex';
     document.getElementById('app-screen').style.display = 'none';
+    updatePageTranslations();
 }
 
 function showApp() {
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('app-screen').style.display = 'block';
+    updatePageTranslations();
     loadDashboard();
 }
 
@@ -152,17 +184,20 @@ function showTab(tabName) {
     else if (tabName === 'plans') loadPlans();
     else if (tabName === 'workout') loadWorkoutTab();
     else if (tabName === 'cardio') loadCardio();
+    else if (tabName === 'clients') loadClients();
     else if (tabName === 'profile') loadProfile();
 }
 
 function showLoginForm() {
     document.getElementById('login-form').style.display = 'block';
     document.getElementById('register-form').style.display = 'none';
+    updatePageTranslations();
 }
 
 function showRegisterForm() {
     document.getElementById('login-form').style.display = 'none';
     document.getElementById('register-form').style.display = 'block';
+    updatePageTranslations();
 }
 
 // Dashboard
@@ -171,8 +206,14 @@ async function loadDashboard() {
         const stats = await apiRequest('/users/dashboard');
         document.getElementById('stat-workouts').textContent = stats.total_workouts;
         document.getElementById('stat-bmi').textContent = stats.current_bmi?.toFixed(1) || '0';
-        document.getElementById('stat-streak').textContent = `${stats.active_streak} days`;
+        document.getElementById('stat-streak').textContent = stats.active_streak;
         document.getElementById('stat-cardio').textContent = stats.total_cardio_sessions;
+
+        // Load exercises count for Personal Trainers
+        if (currentUser.role === 'personal_trainer') {
+            const exercises = await apiRequest('/exercises');
+            document.getElementById('stat-exercises').textContent = exercises.length;
+        }
     } catch (error) {
         console.error('Failed to load dashboard:', error);
     }
@@ -197,9 +238,27 @@ async function loadExercises() {
 
 function displayExercises(exercises) {
     const container = document.getElementById('exercises-list');
+    const isPersonalTrainer = currentUser.role === 'personal_trainer';
 
     if (exercises.length === 0) {
-        container.innerHTML = '<p style="color: white; text-align: center;">No exercises found.</p>';
+        const emptyMessage = isPersonalTrainer
+            ? `
+                <div class="empty-state">
+                    <h3>📋 ${t('exercises.no_exercises')}</h3>
+                    <p>Start building your exercise library! Add exercises to assign to your clients and create comprehensive workout plans.</p>
+                    <button onclick="showAddExerciseModal()" class="btn btn-primary" style="margin-top: 16px;">
+                        ${t('exercises.add_new')}
+                    </button>
+                </div>
+              `
+            : `
+                <div class="empty-state">
+                    <h3>📋 ${t('exercises.no_exercises')}</h3>
+                    <p>${t('exercises.no_exercises_client')}</p>
+                    <p style="margin-top: 12px; font-size: 14px; opacity: 0.8;">Contact your personal trainer to get started!</p>
+                </div>
+              `;
+        container.innerHTML = emptyMessage;
         return;
     }
 
@@ -211,12 +270,18 @@ function displayExercises(exercises) {
             }
             <div class="exercise-content">
                 <h3>${exercise.name}</h3>
-                <span class="exercise-tag">${exercise.muscle_group}</span>
+                <span class="exercise-tag">${t('muscle.' + exercise.muscle_group)}</span>
                 ${exercise.equipment ? `<span class="exercise-tag">${exercise.equipment}</span>` : ''}
                 ${exercise.description ?
                     `<p class="exercise-description collapsed" data-id="${exercise.id}">${exercise.description}</p>
                     <button onclick="toggleDescription('${exercise.id}')" class="btn btn-small" style="margin-top: 8px;">Show More</button>`
                     : ''}
+                ${isPersonalTrainer ? `
+                    <div style="margin-top: 12px; display: flex; gap: 8px;">
+                        <button onclick="showAssignExerciseModal('${exercise.id}')" class="btn btn-small btn-primary" data-i18n="exercises.assign_to_client">${t('exercises.assign_to_client')}</button>
+                        <button onclick="deleteExercise('${exercise.id}')" class="btn btn-small btn-danger" data-i18n="exercises.delete">${t('exercises.delete')}</button>
+                    </div>
+                ` : ''}
             </div>
         </div>
     `).join('');
@@ -229,36 +294,37 @@ function toggleDescription(exerciseId) {
 }
 
 function showAddExerciseModal() {
-    const modal = createModal('Add Exercise', `
+    const modal = createModal(t('exercises.add_new'), `
         <form id="add-exercise-form">
             <div class="form-group">
-                <label for="exercise-name">Name</label>
+                <label for="exercise-name" data-i18n="exercises.name">${t('exercises.name')}</label>
                 <input type="text" id="exercise-name" required>
             </div>
             <div class="form-group">
-                <label for="exercise-muscle">Muscle Group</label>
+                <label for="exercise-muscle" data-i18n="exercises.muscle_group">${t('exercises.muscle_group')}</label>
                 <select id="exercise-muscle" required>
-                    <option value="chest">Chest</option>
-                    <option value="back">Back</option>
-                    <option value="legs">Legs</option>
-                    <option value="shoulders">Shoulders</option>
-                    <option value="arms">Arms</option>
-                    <option value="core">Core</option>
+                    <option value="chest">${t('muscle.chest')}</option>
+                    <option value="back">${t('muscle.back')}</option>
+                    <option value="legs">${t('muscle.legs')}</option>
+                    <option value="shoulders">${t('muscle.shoulders')}</option>
+                    <option value="biceps">${t('muscle.biceps')}</option>
+                    <option value="triceps">${t('muscle.triceps')}</option>
+                    <option value="abs">${t('muscle.abs')}</option>
                 </select>
             </div>
             <div class="form-group">
-                <label for="exercise-equipment">Equipment</label>
+                <label for="exercise-equipment" data-i18n="exercises.equipment">${t('exercises.equipment')}</label>
                 <input type="text" id="exercise-equipment" placeholder="e.g., Barbell, Dumbbells">
             </div>
             <div class="form-group">
-                <label for="exercise-description">Description</label>
+                <label for="exercise-description" data-i18n="exercises.description">${t('exercises.description')}</label>
                 <textarea id="exercise-description"></textarea>
             </div>
             <div class="form-group">
-                <label for="exercise-image">Image (PNG, JPG, GIF)</label>
+                <label for="exercise-image" data-i18n="exercises.image">${t('exercises.image')}</label>
                 <input type="file" id="exercise-image" accept=".png,.jpg,.jpeg,.gif">
             </div>
-            <button type="submit" class="btn btn-primary">Add Exercise</button>
+            <button type="submit" class="btn btn-primary" data-i18n="exercises.create">${t('exercises.create')}</button>
         </form>
     `);
 
@@ -279,12 +345,211 @@ function showAddExerciseModal() {
         try {
             await uploadFile('/exercises', formData);
             closeModal();
-            showAlert('Exercise added successfully!');
+            showAlert(t('common.success'));
             loadExercises();
+            loadDashboard();
         } catch (error) {
             console.error('Failed to add exercise:', error);
         }
     });
+}
+
+async function deleteExercise(exerciseId) {
+    if (!confirm('Are you sure you want to delete this exercise?')) return;
+
+    try {
+        await apiRequest(`/exercises/${exerciseId}`, { method: 'DELETE' });
+        showAlert(t('common.success'));
+        loadExercises();
+        loadDashboard();
+    } catch (error) {
+        console.error('Failed to delete exercise:', error);
+    }
+}
+
+// Clients Management (Personal Trainers only)
+async function loadClients() {
+    if (currentUser.role !== 'personal_trainer') return;
+
+    try {
+        const clients = await apiRequest('/users/clients');
+        displayClients(clients);
+    } catch (error) {
+        console.error('Failed to load clients:', error);
+    }
+}
+
+function displayClients(clients) {
+    const container = document.getElementById('clients-list');
+
+    if (clients.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <h3>👥 ${t('clients.no_clients')}</h3>
+                <p>${t('clients.no_clients_msg')}</p>
+                <div style="margin-top: 20px; padding: 16px; background: rgba(255,255,255,0.05); border-radius: 8px; text-align: left;">
+                    <p style="font-weight: 600; margin-bottom: 8px;">How clients can register with you:</p>
+                    <ol style="margin: 0; padding-left: 20px; font-size: 14px;">
+                        <li>Share your Trainer ID: <code style="background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px;">${currentUser.id}</code></li>
+                        <li>Have them enter it during registration</li>
+                        <li>They'll appear here automatically!</li>
+                    </ol>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = clients.map(client => `
+        <div class="client-card">
+            <h3>${client.name}</h3>
+            <p><strong>${t('clients.email')}:</strong> ${client.email}</p>
+            <p><strong>${t('clients.joined')}:</strong> ${new Date(client.created_at).toLocaleDateString()}</p>
+            <p><strong>BMI:</strong> ${client.bmi?.toFixed(1) || 'N/A'}</p>
+            <div style="margin-top: 12px; display: flex; gap: 8px;">
+                <button onclick="viewClientDetails('${client.id}')" class="btn btn-small btn-primary">${t('clients.view_details')}</button>
+                <button onclick="showAssignToClientModal('${client.id}')" class="btn btn-small">${t('clients.assign_exercises')}</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function viewClientDetails(clientId) {
+    try {
+        const client = await apiRequest(`/users/clients/${clientId}`);
+        const assignedExercises = await apiRequest(`/exercises/assigned/${clientId}`);
+
+        const modal = createModal(client.name, `
+            <div class="client-details">
+                <h4>${t('profile.title')}</h4>
+                <p><strong>${t('auth.email')}:</strong> ${client.email}</p>
+                <p><strong>${t('auth.weight')}:</strong> ${client.weight} kg</p>
+                <p><strong>${t('auth.height')}:</strong> ${client.height} cm</p>
+                <p><strong>BMI:</strong> ${client.bmi?.toFixed(1) || 'N/A'}</p>
+
+                <h4 style="margin-top: 20px;">${t('clients.assigned_exercises')} (${assignedExercises.length})</h4>
+                <div class="assigned-exercises-list">
+                    ${assignedExercises.length === 0 ?
+                        '<p>No exercises assigned yet</p>' :
+                        assignedExercises.map(ae => `
+                            <div class="assigned-exercise-item">
+                                <strong>${ae.exercise.name}</strong>
+                                <span>${t('muscle.' + ae.exercise.muscle_group)}</span>
+                                ${ae.notes ? `<p style="font-size: 12px; color: #888;">${ae.notes}</p>` : ''}
+                                <button onclick="unassignExercise('${ae.id}')" class="btn btn-small btn-danger" style="margin-top: 4px;">Remove</button>
+                            </div>
+                        `).join('')
+                    }
+                </div>
+            </div>
+        `);
+    } catch (error) {
+        console.error('Failed to load client details:', error);
+    }
+}
+
+async function showAssignToClientModal(clientId) {
+    try {
+        const exercises = await apiRequest('/exercises');
+
+        const modal = createModal(t('clients.assign_exercises'), `
+            <form id="assign-exercise-form">
+                <div class="form-group">
+                    <label for="assign-exercise-select" data-i18n="exercises.select_client">${t('exercises.select_client')}</label>
+                    <select id="assign-exercise-select" required>
+                        <option value="">Select exercise...</option>
+                        ${exercises.map(e => `<option value="${e.id}">${e.name}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="assign-notes" data-i18n="exercises.notes">${t('exercises.notes')}</label>
+                    <textarea id="assign-notes" placeholder="Instructions for the client"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" data-i18n="exercises.assign">${t('exercises.assign')}</button>
+            </form>
+        `);
+
+        document.getElementById('assign-exercise-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const assignmentData = {
+                exercise_id: document.getElementById('assign-exercise-select').value,
+                client_id: clientId,
+                notes: document.getElementById('assign-notes').value || null
+            };
+
+            try {
+                await apiRequest('/exercises/assign', {
+                    method: 'POST',
+                    body: JSON.stringify(assignmentData)
+                });
+                closeModal();
+                showAlert(t('common.success'));
+            } catch (error) {
+                console.error('Failed to assign exercise:', error);
+            }
+        });
+    } catch (error) {
+        console.error('Failed to load exercises for assignment:', error);
+    }
+}
+
+async function showAssignExerciseModal(exerciseId) {
+    try {
+        const clients = await apiRequest('/users/clients');
+
+        const modal = createModal(t('exercises.assign_to_client'), `
+            <form id="assign-exercise-form">
+                <div class="form-group">
+                    <label for="assign-client-select" data-i18n="exercises.select_client">${t('exercises.select_client')}</label>
+                    <select id="assign-client-select" required>
+                        <option value="">Select client...</option>
+                        ${clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="assign-notes" data-i18n="exercises.notes">${t('exercises.notes')}</label>
+                    <textarea id="assign-notes" placeholder="Instructions for the client"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" data-i18n="exercises.assign">${t('exercises.assign')}</button>
+            </form>
+        `);
+
+        document.getElementById('assign-exercise-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const assignmentData = {
+                exercise_id: exerciseId,
+                client_id: document.getElementById('assign-client-select').value,
+                notes: document.getElementById('assign-notes').value || null
+            };
+
+            try {
+                await apiRequest('/exercises/assign', {
+                    method: 'POST',
+                    body: JSON.stringify(assignmentData)
+                });
+                closeModal();
+                showAlert(t('common.success'));
+            } catch (error) {
+                console.error('Failed to assign exercise:', error);
+            }
+        });
+    } catch (error) {
+        console.error('Failed to load clients:', error);
+    }
+}
+
+async function unassignExercise(assignmentId) {
+    if (!confirm('Remove this exercise assignment?')) return;
+
+    try {
+        await apiRequest(`/exercises/assign/${assignmentId}`, { method: 'DELETE' });
+        showAlert(t('common.success'));
+        closeModal();
+    } catch (error) {
+        console.error('Failed to unassign exercise:', error);
+    }
 }
 
 // Workout Plans
@@ -301,7 +566,15 @@ function displayPlans(plans) {
     const container = document.getElementById('plans-list');
 
     if (plans.length === 0) {
-        container.innerHTML = '<div class="card"><p style="text-align: center;">No workout plans yet. Create your first plan!</p></div>';
+        container.innerHTML = `
+            <div class="empty-state">
+                <h3>💪 ${t('plans.no_plans')}</h3>
+                <p>${t('plans.no_plans_msg')}</p>
+                <button onclick="showAddPlanModal()" class="btn btn-primary" style="margin-top: 16px;">
+                    ${t('plans.create_new')}
+                </button>
+            </div>
+        `;
         return;
     }
 
@@ -309,9 +582,9 @@ function displayPlans(plans) {
         <div class="plan-card">
             <h3>${plan.name}</h3>
             <p>${plan.description || 'No description'}</p>
-            ${plan.is_active ? '<span class="exercise-tag">Active</span>' : ''}
+            ${plan.is_active ? `<span class="exercise-tag">${t('plans.active')}</span>` : ''}
             <div class="plan-exercises-list">
-                <strong>Exercises (${plan.plan_exercises.length})</strong>
+                <strong>${t('exercises.title')} (${plan.plan_exercises.length})</strong>
                 ${plan.plan_exercises.map(pe => `
                     <div class="plan-exercise-item">
                         <span>${pe.exercise?.name || 'Exercise'}</span>
@@ -325,22 +598,23 @@ function displayPlans(plans) {
 }
 
 function showAddPlanModal() {
-    const modal = createModal('Create Workout Plan', `
+    const modal = createModal(t('plans.create_new'), `
         <form id="add-plan-form">
             <div class="form-group">
-                <label for="plan-name">Plan Name</label>
+                <label for="plan-name" data-i18n="plans.name">${t('plans.name')}</label>
                 <input type="text" id="plan-name" required>
             </div>
             <div class="form-group">
-                <label for="plan-description">Description</label>
+                <label for="plan-description" data-i18n="plans.description">${t('plans.description')}</label>
                 <textarea id="plan-description"></textarea>
             </div>
             <div class="form-group">
                 <label>
-                    <input type="checkbox" id="plan-active"> Set as active plan
+                    <input type="checkbox" id="plan-active">
+                    <span data-i18n="plans.active">${t('plans.active')}</span>
                 </label>
             </div>
-            <button type="submit" class="btn btn-primary">Create Plan</button>
+            <button type="submit" class="btn btn-primary" data-i18n="plans.save">${t('plans.save')}</button>
         </form>
     `);
 
@@ -360,7 +634,7 @@ function showAddPlanModal() {
                 body: JSON.stringify(planData)
             });
             closeModal();
-            showAlert('Plan created successfully!');
+            showAlert(t('common.success'));
             loadPlans();
         } catch (error) {
             console.error('Failed to create plan:', error);
@@ -521,7 +795,7 @@ async function logExercise() {
         document.getElementById('log-rest').value = '';
         document.getElementById('log-notes').value = '';
 
-        showAlert('Exercise logged!');
+        showAlert(t('common.success'));
     } catch (error) {
         console.error('Failed to log exercise:', error);
     }
@@ -634,7 +908,7 @@ function showAddCardioModal() {
                 body: JSON.stringify(cardioData)
             });
             closeModal();
-            showAlert('Cardio session logged!');
+            showAlert(t('common.success'));
             loadCardio();
         } catch (error) {
             console.error('Failed to log cardio:', error);
@@ -652,6 +926,7 @@ async function loadProfile() {
         document.getElementById('profile-height').value = profile.height;
         document.getElementById('profile-desired-weight').value = profile.desired_weight || '';
         document.getElementById('profile-phone').value = profile.phone || '';
+        document.getElementById('profile-language').value = profile.language || 'en';
 
         // Load health metrics
         await loadHealthMetrics();
@@ -664,12 +939,15 @@ async function updateProfile(e) {
     e.preventDefault();
 
     const desiredWeight = document.getElementById('profile-desired-weight').value;
+    const newLanguage = document.getElementById('profile-language').value;
+
     const profileData = {
         name: document.getElementById('profile-name').value,
         weight: parseFloat(document.getElementById('profile-weight').value),
         height: parseFloat(document.getElementById('profile-height').value),
         desired_weight: desiredWeight ? parseFloat(desiredWeight) : null,
-        phone: document.getElementById('profile-phone').value || null
+        phone: document.getElementById('profile-phone').value || null,
+        language: newLanguage
     };
 
     try {
@@ -677,7 +955,14 @@ async function updateProfile(e) {
             method: 'PUT',
             body: JSON.stringify(profileData)
         });
-        showAlert('Profile updated successfully!');
+
+        // Update language if changed
+        if (newLanguage !== currentUser.language) {
+            setLanguage(newLanguage);
+            currentUser.language = newLanguage;
+        }
+
+        showAlert(t('common.success'));
         loadProfile();
         loadDashboard();
     } catch (error) {
@@ -716,42 +1001,42 @@ function displayHealthMetrics(metrics) {
     const html = `
         <div class="metrics-grid">
             <div class="metric-item">
-                <span class="metric-label">Current BMI</span>
+                <span class="metric-label">${t('health.current_bmi')}</span>
                 <span class="metric-value ${getBMIClass(metrics.health_status)}">${metrics.current_bmi}</span>
                 <span class="metric-subtitle">${metrics.bmi_category}</span>
             </div>
 
             <div class="metric-item">
-                <span class="metric-label">Current Weight</span>
+                <span class="metric-label">${t('health.current_weight')}</span>
                 <span class="metric-value">${metrics.current_weight} kg</span>
             </div>
 
             <div class="metric-item">
-                <span class="metric-label">Healthy Range</span>
+                <span class="metric-label">${t('health.healthy_range')}</span>
                 <span class="metric-value">${metrics.healthy_weight_range.min} - ${metrics.healthy_weight_range.max} kg</span>
             </div>
 
             ${metrics.desired_weight ? `
                 <div class="metric-item">
-                    <span class="metric-label">Goal Weight</span>
+                    <span class="metric-label">${t('health.desired_weight')}</span>
                     <span class="metric-value">${metrics.desired_weight} kg</span>
                 </div>
 
                 <div class="metric-item">
-                    <span class="metric-label">To Lose/Gain</span>
+                    <span class="metric-label">${t('health.weight_difference')}</span>
                     <span class="metric-value ${metrics.weight_difference < 0 ? 'status-info' : 'status-success'}">
                         ${metrics.weight_difference > 0 ? '+' : ''}${metrics.weight_difference} kg
                     </span>
                 </div>
 
                 <div class="metric-item">
-                    <span class="metric-label">Estimated Timeline</span>
-                    <span class="metric-value">${metrics.estimated_weeks} weeks</span>
+                    <span class="metric-label">${t('health.timeline')}</span>
+                    <span class="metric-value">${metrics.estimated_weeks} ${t('health.weeks')}</span>
                     <span class="metric-subtitle">~${metrics.estimated_date}</span>
                 </div>
 
                 <div class="metric-item">
-                    <span class="metric-label">Daily Calories</span>
+                    <span class="metric-label">${t('health.calorie_adjustment')}</span>
                     <span class="metric-value ${metrics.daily_calorie_adjustment < 0 ? 'status-info' : 'status-success'}">
                         ${metrics.daily_calorie_adjustment > 0 ? '+' : ''}${metrics.daily_calorie_adjustment} cal
                     </span>
@@ -761,7 +1046,7 @@ function displayHealthMetrics(metrics) {
         </div>
 
         <div class="recommendation-box">
-            <strong>Recommendation:</strong>
+            <strong>${t('health.recommendation')}:</strong>
             <p>${metrics.recommendation}</p>
         </div>
     `;
@@ -829,6 +1114,9 @@ function closeModal() {
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize translations
+    updatePageTranslations();
+
     // Auth events
     document.getElementById('login').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -839,16 +1127,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('register').addEventListener('submit', async (e) => {
         e.preventDefault();
+        const role = document.getElementById('register-role').value;
+        const ptId = document.getElementById('register-pt-id').value;
+
         const userData = {
             name: document.getElementById('register-name').value,
             email: document.getElementById('register-email').value,
             password: document.getElementById('register-password').value,
+            role: role,
+            language: document.getElementById('register-language').value,
+            personal_trainer_id: (role === 'client' && ptId) ? ptId : null,
             date_of_birth: document.getElementById('register-dob').value + 'T00:00:00',
             weight: parseFloat(document.getElementById('register-weight').value),
             height: parseFloat(document.getElementById('register-height').value),
             phone: document.getElementById('register-phone').value || null
         };
         await register(userData);
+    });
+
+    // Show/hide PT ID field based on role selection
+    document.getElementById('register-role').addEventListener('change', (e) => {
+        const ptIdGroup = document.getElementById('pt-id-group');
+        ptIdGroup.style.display = e.target.value === 'client' ? 'block' : 'none';
+    });
+
+    // Update language when changed in registration
+    document.getElementById('register-language').addEventListener('change', (e) => {
+        setLanguage(e.target.value);
     });
 
     document.getElementById('show-register').addEventListener('click', (e) => {

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from app.db.database import get_db
-from app.models.models import User, WorkoutPlan, PlanExercise, Exercise
+from app.models.models import User, WorkoutPlan, PlanExercise, Exercise, UserRole, AssignedExercise
 from app.schemas.schemas import (
     WorkoutPlanCreate,
     WorkoutPlanResponse,
@@ -40,6 +40,26 @@ async def create_workout_plan(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Exercise {exercise_data.exercise_id} not found"
             )
+
+        # SECURITY: Verify user has permission to use this exercise
+        if current_user.role == UserRole.PERSONAL_TRAINER:
+            # PT can only use exercises they created
+            if exercise.created_by != current_user.id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"You don't have permission to use exercise {exercise_data.exercise_id}"
+                )
+        else:
+            # CLIENT can only use exercises assigned to them
+            is_assigned = db.query(AssignedExercise).filter(
+                AssignedExercise.exercise_id == exercise_data.exercise_id,
+                AssignedExercise.client_id == current_user.id
+            ).first()
+            if not is_assigned:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Exercise {exercise_data.exercise_id} has not been assigned to you"
+                )
 
         plan_exercise = PlanExercise(
             workout_plan_id=new_plan.id,
@@ -176,6 +196,26 @@ async def add_exercise_to_plan(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Exercise not found"
         )
+
+    # SECURITY: Verify user has permission to use this exercise
+    if current_user.role == UserRole.PERSONAL_TRAINER:
+        # PT can only use exercises they created
+        if exercise.created_by != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"You don't have permission to use exercise {exercise_data.exercise_id}"
+            )
+    else:
+        # CLIENT can only use exercises assigned to them
+        is_assigned = db.query(AssignedExercise).filter(
+            AssignedExercise.exercise_id == exercise_data.exercise_id,
+            AssignedExercise.client_id == current_user.id
+        ).first()
+        if not is_assigned:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Exercise {exercise_data.exercise_id} has not been assigned to you"
+            )
 
     plan_exercise = PlanExercise(
         workout_plan_id=plan_id,

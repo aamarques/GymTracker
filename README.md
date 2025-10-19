@@ -1,14 +1,35 @@
 # Gym Workout Tracker
 
-A full-stack web application for tracking gym workouts, exercises, and cardio sessions with real-time workout timers and comprehensive progress tracking.
+**Version 0.1.1** - Multi-Tenant Fitness Management Platform
+
+A full-stack web application for Personal Trainers and Clients to manage workouts, exercises, and progress tracking with multi-tenant architecture and internationalization support.
 
 ## Features
 
+### 🆕 Multi-Tenant System (V0.1.0)
+- **Personal Trainer Role:**
+  - Create and manage exercise library
+  - View and manage assigned clients
+  - Assign exercises to specific clients with custom instructions
+  - Track client progress and assignments
+- **Client Role:**
+  - Register with a Personal Trainer
+  - View only exercises assigned by PT
+  - Create workout plans from assigned exercises
+  - Track personal workouts and progress
+
+### 🌍 Internationalization (V0.1.0)
+- Support for English and Portuguese languages
+- User-selectable language preference
+- 180+ translated UI strings
+- Real-time language switching
+
 ### User Management
 - Secure user registration and authentication with JWT tokens
+- Role-based access control (Personal Trainer / Client)
 - Password hashing with bcrypt
 - Profile management with BMI and age calculation
-- Health metrics tracking
+- Health metrics tracking with personalized recommendations
 
 ### Exercise Library
 - Create and manage exercises with images
@@ -117,10 +138,19 @@ docker-compose up -d
 
 5. **Access the application**
 Open your browser and navigate to:
-- **Application**: http://localhost:8080 (Podman) or http://localhost (Docker Compose)
-- **API Documentation**: http://localhost:8080/docs (Podman) or http://localhost/docs (Docker Compose)
+
+**Using Podman (default WSL2 configuration):**
+- **Application**: http://localhost:8080
+- **API Documentation**: http://localhost:8080/docs
 - **Backend API**: http://localhost:8000
 - **API Health Check**: http://localhost:8000/health
+
+**Using Docker Compose (with privileged port access):**
+- **Application**: http://localhost
+- **API Documentation**: http://localhost/docs
+- **Backend API**: http://localhost:8000
+
+> **Note**: Podman uses port 8080 to avoid privileged port binding issues on WSL2. See [WSL2 + Podman Setup Guide](docs/WSL2_PODMAN_SETUP.md) for details.
 
 ### First Time Setup
 
@@ -279,10 +309,35 @@ docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 ## Troubleshooting
 
-### WSL2 nftables/netavark Error
+### WSL2 + Podman Issues
+
+If you encounter issues running with Podman on WSL2, see the **[WSL2 + Podman Setup Guide](docs/WSL2_PODMAN_SETUP.md)** for complete configuration instructions.
+
+**Common WSL2/Podman errors:**
+
+1. **nftables/netavark Error**
+   ```
+   Error: netavark: nftables error: nft did not return successfully
+   ```
+   **Fix**: Configure netavark to use iptables instead of nftables
+   ```bash
+   # Add to ~/.config/containers/containers.conf
+   [network]
+   firewall_driver = "iptables"
+   ```
+
+2. **Privileged Port Binding Error**
+   ```
+   Error: rootlessport cannot expose privileged port 80
+   ```
+   **Fix**: Use port 8080 instead (already configured in docker-compose.yml)
+
+   See the [WSL2 + Podman Setup Guide](docs/WSL2_PODMAN_SETUP.md) for detailed solutions.
+
+### WSL2 nftables/netavark Error (Legacy Docker)
 If you encounter "nftables error: nft did not return successfully" with Docker Compose in WSL2:
 ```bash
-# Solution 1: Use Podman instead
+# Solution 1: Use Podman instead (recommended)
 bash start-containers.sh
 
 # Solution 2: Disable BuildKit for Docker
@@ -364,6 +419,7 @@ podman stop gym_nginx gym_backend gym_postgres  # Stop all
 
 ### Quick Links
 - **[Quick Start Guide](docs/QUICK_START.md)** - Get running in 5 minutes
+- **[WSL2 + Podman Setup](docs/WSL2_PODMAN_SETUP.md)** - WSL2/Podman configuration guide
 - **[API Documentation](docs/API.md)** - Complete API reference
 - **[Development Guide](docs/DEVELOPMENT.md)** - Developer setup and workflow
 - **[Deployment Guide](docs/DEPLOYMENT.md)** - Production deployment
@@ -391,15 +447,51 @@ For issues and questions:
 - Review the API documentation at http://localhost/docs
 - Check application logs: `docker-compose logs -f`
 
+## Version History
+
+### Version 0.1.1 (October 2025) - Current
+**Bug Fixes & UX Improvements:**
+- ✅ Fixed nginx configuration for Docker container networking
+- ✅ Fixed database enum type mismatch (role field)
+- ✅ Fixed SQLAlchemy enum handling for user roles
+- ✅ Improved empty state messages for Exercises, Workout Plans, and Clients
+- ✅ Added role-specific empty state guidance
+- ✅ Added glassmorphism styling for empty states
+- ✅ Added multilingual support for empty state messages
+
+### Version 0.1.0 (October 2025)
+**Multi-Tenant Release:**
+- ✅ Multi-tenant system (Personal Trainers & Clients)
+- ✅ Client-Trainer relationships
+- ✅ Exercise assignment system
+- ✅ Internationalization (English & Portuguese)
+- ✅ Role-based access control
+- ✅ Language preferences in user profile
+
+### Version 0.0.1 (Initial Release)
+- Basic workout tracking
+- Exercise library
+- Workout plans
+- Cardio tracking
+- Dashboard statistics
+
 ## Future Enhancements
 
-- Progressive Web App (PWA) features
-- Push notifications for rest timers
-- Social features and workout sharing
-- Advanced analytics and progress charts
-- Integration with fitness wearables
+See [docs/FUTURE_IMPROVEMENTS.md](docs/FUTURE_IMPROVEMENTS.md) for detailed roadmap.
+
+**Planned for V0.2.0 (Q1 2026):**
+- Client invitation system via email
+- Workout plan templates for PTs
+- Progress tracking and analytics
+- In-app messaging between PT and clients
+- Additional languages (Spanish, French, German)
+- Exercise video uploads
+- Client progress photos
+
+**Future Versions:**
+- Mobile application (React Native / Flutter)
 - Nutrition tracking
-- Exercise video tutorials
-- Workout templates library
-- Personal records tracking
-- Export workout data to CSV/PDF
+- Payment & subscription management
+- Group training and classes
+- Gamification and achievements
+- AI-powered features (form analysis, workout suggestions)

@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
 from app.db.database import get_db
-from app.models.models import User
+from app.models.models import User, UserRole
 from app.schemas.schemas import UserCreate, UserResponse, Token, LoginRequest
 from app.core.security import (
     get_password_hash,
@@ -52,15 +52,21 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
         )
 
     # Create new user
+    # SECURITY: Force role to CLIENT to prevent privilege escalation
+    # Users cannot self-assign PERSONAL_TRAINER role during registration
     hashed_password = get_password_hash(user_data.password)
     new_user = User(
         email=user_data.email,
         hashed_password=hashed_password,
         name=user_data.name,
+        role=UserRole.CLIENT,  # Force CLIENT role for all registrations
+        language=user_data.language,  # Allow language selection
         date_of_birth=user_data.date_of_birth,
         weight=user_data.weight,
         height=user_data.height,
         phone=user_data.phone
+        # personal_trainer_id is intentionally NOT set from user input
+        # It must be NULL for self-registration; only admins can assign PTs
     )
 
     db.add(new_user)
