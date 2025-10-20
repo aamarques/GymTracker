@@ -96,6 +96,24 @@ const translations = {
         'plans.no_plans': 'No workout plans yet',
         'plans.no_plans_msg': 'Create your first workout plan to get started with your training!',
 
+        // Active Workout
+        'workout.sets': 'Sets',
+        'workout.reps': 'Reps',
+        'workout.rest': 'Rest',
+        'workout.suggested': 'Suggested',
+        'workout.weight_used': 'Weight Used (kg)',
+        'workout.complete': 'Complete',
+        'workout.start_workout': 'Start Workout',
+        'workout.exercises_in_workout': 'exercises in this workout',
+        'workout.end_workout': 'End Workout',
+        'workout.exercise_completed': 'Exercise completed',
+        'workout.no_active_session': 'No active workout session',
+        'workout.no_plans_available': 'No workout plans available yet.',
+        'workout.pt_will_create': 'Your personal trainer will create workout plans for you.',
+        'workout.select_plan': 'Select a Workout Plan',
+        'workout.choose_plan': 'Choose a workout plan to start your training session:',
+        'workout.start_session': 'Start Session',
+
         // Profile
         'profile.title': 'Profile',
         'profile.update': 'Update Profile',
@@ -237,6 +255,24 @@ const translations = {
         'plans.save': 'Salvar Plano',
         'plans.no_plans': 'Nenhum plano de treino ainda',
         'plans.no_plans_msg': 'Crie seu primeiro plano de treino para começar seu treinamento!',
+
+        // Active Workout
+        'workout.sets': 'Séries',
+        'workout.reps': 'Repetições',
+        'workout.rest': 'Descanso',
+        'workout.suggested': 'Sugerido',
+        'workout.weight_used': 'Peso Usado (kg)',
+        'workout.complete': 'Completar',
+        'workout.start_workout': 'Iniciar Treino',
+        'workout.exercises_in_workout': 'exercícios neste treino',
+        'workout.end_workout': 'Finalizar Treino',
+        'workout.exercise_completed': 'Exercício completado',
+        'workout.no_active_session': 'Nenhuma sessão de treino ativa',
+        'workout.no_plans_available': 'Nenhum plano de treino disponível ainda.',
+        'workout.pt_will_create': 'Seu personal trainer criará planos de treino para você.',
+        'workout.select_plan': 'Selecione um Plano de Treino',
+        'workout.choose_plan': 'Escolha um plano de treino para iniciar sua sessão:',
+        'workout.start_session': 'Iniciar Sessão',
 
         // Profile
         'profile.title': 'Perfil',

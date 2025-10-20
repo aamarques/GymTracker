@@ -105,9 +105,25 @@ async def get_workout_plans(
     db: Session = Depends(get_db)
 ):
     """Get all workout plans for current user"""
+    from app.models.models import ExerciseLog, WorkoutSession
+    from sqlalchemy import desc
+
     plans = db.query(WorkoutPlan).filter(
         WorkoutPlan.user_id == current_user.id
     ).offset(skip).limit(limit).all()
+
+    # Enrich plan exercises with last weight used
+    for plan in plans:
+        for plan_exercise in plan.plan_exercises:
+            # Get the last exercise log for this exercise by this user
+            last_log = db.query(ExerciseLog).join(WorkoutSession).filter(
+                WorkoutSession.user_id == current_user.id,
+                ExerciseLog.exercise_id == plan_exercise.exercise_id,
+                WorkoutSession.end_time.isnot(None)  # Only completed sessions
+            ).order_by(desc(ExerciseLog.completed_at)).first()
+
+            if last_log and last_log.weight_used is not None:
+                plan_exercise.last_weight_used = last_log.weight_used
 
     return plans
 
@@ -119,6 +135,9 @@ async def get_workout_plan(
     db: Session = Depends(get_db)
 ):
     """Get specific workout plan"""
+    from app.models.models import ExerciseLog, WorkoutSession
+    from sqlalchemy import desc
+
     plan = db.query(WorkoutPlan).filter(
         WorkoutPlan.id == plan_id,
         WorkoutPlan.user_id == current_user.id
@@ -129,6 +148,18 @@ async def get_workout_plan(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Workout plan not found"
         )
+
+    # Enrich plan exercises with last weight used
+    for plan_exercise in plan.plan_exercises:
+        # Get the last exercise log for this exercise by this user
+        last_log = db.query(ExerciseLog).join(WorkoutSession).filter(
+            WorkoutSession.user_id == current_user.id,
+            ExerciseLog.exercise_id == plan_exercise.exercise_id,
+            WorkoutSession.end_time.isnot(None)  # Only completed sessions
+        ).order_by(desc(ExerciseLog.completed_at)).first()
+
+        if last_log and last_log.weight_used is not None:
+            plan_exercise.last_weight_used = last_log.weight_used
 
     return plan
 

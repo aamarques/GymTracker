@@ -109,6 +109,7 @@ class ExerciseUpdate(BaseModel):
 class ExerciseResponse(ExerciseBase):
     id: str
     image_path: Optional[str] = None
+    image_url: Optional[str] = None
     created_at: datetime
 
     class Config:
@@ -133,6 +134,7 @@ class PlanExerciseResponse(PlanExerciseBase):
     id: str
     workout_plan_id: str
     exercise: Optional[ExerciseResponse] = None
+    last_weight_used: Optional[float] = None  # Last weight used by user for this exercise
 
     class Config:
         from_attributes = True

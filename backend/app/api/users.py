@@ -12,6 +12,45 @@ from datetime import datetime, timedelta
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
+# Health recommendation translations
+TRANSLATIONS = {
+    "en": {
+        "in_healthy_range": "Your BMI is {bmi:.1f}, which is in the healthy range.",
+        "below_healthy_range": "Your BMI is {bmi:.1f}, which is below the healthy range.",
+        "above_healthy_range": "Your BMI is {bmi:.1f}, which is above the healthy range.",
+        "significantly_above": "Your BMI is {bmi:.1f}, which is significantly above the healthy range.",
+        "set_goal": "Set a desired weight goal to get a personalized timeline and recommendations.",
+        "consider_target": "Consider setting a target weight between {min}kg and {max}kg.",
+        "consult_professional": "Consult with a healthcare professional for personalized advice.",
+        "consult_before_loss": "Please consult with a healthcare professional before starting any weight loss program.",
+        "gain_recommendation": "To reach your goal of {target}kg, you need to gain {diff:.1f}kg. At a healthy rate of {rate}kg per week, this will take approximately {weeks} weeks. Aim for a calorie surplus of ~{cal} calories per day through increased food intake and strength training.",
+        "loss_recommendation": "To reach your goal of {target}kg, you need to lose {diff:.1f}kg. At a healthy rate of {rate}kg per week, this will take approximately {weeks} weeks. Aim for a calorie deficit of ~{cal} calories per day through diet and exercise.",
+        "at_target": "You're at your target weight! Focus on maintaining through balanced diet and regular exercise."
+    },
+    "pt": {
+        "in_healthy_range": "Seu IMC é {bmi:.1f}, que está na faixa saudável.",
+        "below_healthy_range": "Seu IMC é {bmi:.1f}, que está abaixo da faixa saudável.",
+        "above_healthy_range": "Seu IMC é {bmi:.1f}, que está acima da faixa saudável.",
+        "significantly_above": "Seu IMC é {bmi:.1f}, que está significativamente acima da faixa saudável.",
+        "set_goal": "Defina um objetivo de peso desejado para obter um cronograma e recomendações personalizadas.",
+        "consider_target": "Considere definir um peso alvo entre {min}kg e {max}kg.",
+        "consult_professional": "Consulte um profissional de saúde para aconselhamento personalizado.",
+        "consult_before_loss": "Por favor, consulte um profissional de saúde antes de iniciar qualquer programa de perda de peso.",
+        "gain_recommendation": "Para atingir seu objetivo de {target}kg, você precisa ganhar {diff:.1f}kg. A uma taxa saudável de {rate}kg por semana, isso levará aproximadamente {weeks} semanas. Procure um superávit calórico de ~{cal} calorias por dia através de maior ingestão alimentar e treino de força.",
+        "loss_recommendation": "Para atingir seu objetivo de {target}kg, você precisa perder {diff:.1f}kg. A uma taxa saudável de {rate}kg por semana, isso levará aproximadamente {weeks} semanas. Procure um déficit calórico de ~{cal} calorias por dia através de dieta e exercício.",
+        "at_target": "Você está no seu peso alvo! Concentre-se em manter através de dieta equilibrada e exercício regular."
+    }
+}
+
+
+def get_translation(lang: str, key: str, **kwargs) -> str:
+    """Get translated text for a given key and language"""
+    if lang not in TRANSLATIONS:
+        lang = "en"
+    template = TRANSLATIONS[lang].get(key, TRANSLATIONS["en"][key])
+    return template.format(**kwargs)
+
+
 @router.get("/profile", response_model=UserResponse)
 async def get_profile(current_user: User = Depends(get_current_user)):
     """Get current user profile"""
@@ -193,52 +232,61 @@ async def get_health_metrics(
             if weight_difference < 0:
                 daily_calorie_adjustment = -daily_calorie_adjustment
 
-            # Generate recommendation
+            # Generate recommendation using user's language
+            lang = current_user.language if current_user.language in ["en", "pt"] else "en"
+
             if weight_difference > 0:
-                recommendation = (
-                    f"To reach your goal of {current_user.desired_weight}kg, you need to gain "
-                    f"{abs(weight_difference):.1f}kg. At a healthy rate of {safe_weekly_change}kg per week, "
-                    f"this will take approximately {estimated_weeks} weeks. "
-                    f"Aim for a calorie surplus of ~{abs(daily_calorie_adjustment)} calories per day through "
-                    f"increased food intake and strength training."
+                recommendation = get_translation(
+                    lang, "gain_recommendation",
+                    target=current_user.desired_weight,
+                    diff=abs(weight_difference),
+                    rate=safe_weekly_change,
+                    weeks=estimated_weeks,
+                    cal=abs(daily_calorie_adjustment)
                 )
             elif weight_difference < 0:
-                recommendation = (
-                    f"To reach your goal of {current_user.desired_weight}kg, you need to lose "
-                    f"{abs(weight_difference):.1f}kg. At a healthy rate of {safe_weekly_change}kg per week, "
-                    f"this will take approximately {estimated_weeks} weeks. "
-                    f"Aim for a calorie deficit of ~{abs(daily_calorie_adjustment)} calories per day through "
-                    f"diet and exercise."
+                recommendation = get_translation(
+                    lang, "loss_recommendation",
+                    target=current_user.desired_weight,
+                    diff=abs(weight_difference),
+                    rate=safe_weekly_change,
+                    weeks=estimated_weeks,
+                    cal=abs(daily_calorie_adjustment)
                 )
             else:
-                recommendation = "You're at your target weight! Focus on maintaining through balanced diet and regular exercise."
+                recommendation = get_translation(lang, "at_target")
         else:
-            recommendation = "You're at your target weight! Focus on maintaining through balanced diet and regular exercise."
+            lang = current_user.language if current_user.language in ["en", "pt"] else "en"
+            recommendation = get_translation(lang, "at_target")
     else:
-        # No goal weight set
+        # No goal weight set - use user's language
+        lang = current_user.language if current_user.language in ["en", "pt"] else "en"
+
         if health_status == "healthy":
-            recommendation = (
-                f"Your BMI is {current_bmi:.1f}, which is in the healthy range. "
-                f"Set a desired weight goal to get a personalized timeline and recommendations."
-            )
+            bmi_msg = get_translation(lang, "in_healthy_range", bmi=current_bmi)
+            goal_msg = get_translation(lang, "set_goal")
+            recommendation = f"{bmi_msg} {goal_msg}"
         elif health_status == "underweight":
-            recommendation = (
-                f"Your BMI is {current_bmi:.1f}, which is below the healthy range. "
-                f"Consider setting a target weight between {healthy_weight_range['min']}kg and {healthy_weight_range['max']}kg. "
-                f"Consult with a healthcare professional for personalized advice."
-            )
+            bmi_msg = get_translation(lang, "below_healthy_range", bmi=current_bmi)
+            target_msg = get_translation(lang, "consider_target",
+                                       min=healthy_weight_range['min'],
+                                       max=healthy_weight_range['max'])
+            consult_msg = get_translation(lang, "consult_professional")
+            recommendation = f"{bmi_msg} {target_msg} {consult_msg}"
         elif health_status == "overweight":
-            recommendation = (
-                f"Your BMI is {current_bmi:.1f}, which is above the healthy range. "
-                f"Consider setting a target weight between {healthy_weight_range['min']}kg and {healthy_weight_range['max']}kg. "
-                f"Set a desired weight goal to get a personalized timeline."
-            )
+            bmi_msg = get_translation(lang, "above_healthy_range", bmi=current_bmi)
+            target_msg = get_translation(lang, "consider_target",
+                                       min=healthy_weight_range['min'],
+                                       max=healthy_weight_range['max'])
+            goal_msg = get_translation(lang, "set_goal")
+            recommendation = f"{bmi_msg} {target_msg} {goal_msg}"
         else:  # obese
-            recommendation = (
-                f"Your BMI is {current_bmi:.1f}, which is significantly above the healthy range. "
-                f"Consider setting a target weight between {healthy_weight_range['min']}kg and {healthy_weight_range['max']}kg. "
-                f"Please consult with a healthcare professional before starting any weight loss program."
-            )
+            bmi_msg = get_translation(lang, "significantly_above", bmi=current_bmi)
+            target_msg = get_translation(lang, "consider_target",
+                                       min=healthy_weight_range['min'],
+                                       max=healthy_weight_range['max'])
+            consult_msg = get_translation(lang, "consult_before_loss")
+            recommendation = f"{bmi_msg} {target_msg} {consult_msg}"
 
     return HealthMetrics(
         current_weight=current_user.weight,

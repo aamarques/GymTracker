@@ -942,7 +942,11 @@ async function startWorkoutWithPlan(planId) {
             body: JSON.stringify(sessionData)
         });
 
-        showActiveWorkout();
+        // Reset completed exercises
+        completedExercises = [];
+
+        // Load and display the plan exercises
+        await displayActiveWorkoutWithExercises();
         startTimer(new Date(activeWorkoutSession.start_time));
         showAlert('Workout started! Let\'s go! 💪');
     } catch (error) {
@@ -955,7 +959,7 @@ async function deleteWorkoutPlan(planId) {
     if (!confirm('Are you sure you want to delete this workout plan?')) return;
 
     try {
-        const response = await fetch(`${API_BASE_URL}/workout-plans/${planId}`, {
+        const response = await fetch(`${API_BASE}/workout-plans/${planId}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${authToken}`,
@@ -982,20 +986,39 @@ async function deleteWorkoutPlan(planId) {
 // Workout Session
 async function loadWorkoutTab() {
     try {
+        // Check if there's an active session
         const session = await apiRequest('/workout-sessions/active');
 
         if (session) {
             activeWorkoutSession = session;
-            showActiveWorkout();
+            await displayActiveWorkoutWithExercises();
             startTimer(new Date(session.start_time));
         } else {
-            // Show available workout plans for client
-            showNoWorkout();
-            await showAvailableWorkoutPlans();
+            // Try to get the active workout plan
+            const plans = await apiRequest('/workout-plans');
+            const activePlan = plans.find(p => p.is_active);
+
+            if (activePlan && activePlan.plan_exercises.length > 0) {
+                // Show plan exercises ready to start
+                await showWorkoutPlanExercises(activePlan, false);
+            } else if (plans.length > 0) {
+                // Show available plans if no active plan
+                showNoWorkout();
+                await showAvailableWorkoutPlans();
+            } else {
+                // No plans at all
+                showNoWorkout();
+                document.getElementById('no-active-workout').innerHTML = `
+                    <div class="empty-state">
+                        <p>${t('workout.no_plans_available')}</p>
+                        <p style="margin-top: 10px; opacity: 0.8;">${t('workout.pt_will_create')}</p>
+                    </div>
+                `;
+            }
         }
     } catch (error) {
+        console.error('Failed to load workout tab:', error);
         showNoWorkout();
-        await showAvailableWorkoutPlans();
     }
 }
 
@@ -1007,24 +1030,24 @@ async function showAvailableWorkoutPlans() {
         if (plans.length > 0) {
             container.innerHTML = `
                 <div class="empty-state">
-                    <h3>Select a Workout Plan</h3>
-                    <p>Choose a workout plan to start your training session:</p>
+                    <h3>${t('workout.select_plan')}</h3>
+                    <p>${t('workout.choose_plan')}</p>
                     <div style="margin-top: 20px;">
                         ${plans.map(plan => `
                             <div class="plan-card" style="margin-bottom: 15px; text-align: left;">
                                 <h4>${plan.name}</h4>
-                                <p>${plan.description || 'No description'}</p>
+                                <p>${plan.description || ''}</p>
                                 <div class="plan-exercises-list">
-                                    <strong>Exercises (${plan.plan_exercises.length})</strong>
+                                    <strong>${t('exercises.title')} (${plan.plan_exercises.length})</strong>
                                     ${plan.plan_exercises.slice(0, 3).map(pe => `
                                         <div class="plan-exercise-item">
-                                            <span>${pe.exercise?.name || 'Exercise'}</span>
+                                            <span>${pe.exercise?.name || ''}</span>
                                             <span>${pe.sets}x${pe.reps}</span>
                                         </div>
                                     `).join('')}
-                                    ${plan.plan_exercises.length > 3 ? `<p style="font-size: 12px; opacity: 0.7;">+${plan.plan_exercises.length - 3} more exercises</p>` : ''}
+                                    ${plan.plan_exercises.length > 3 ? `<p style="font-size: 12px; opacity: 0.7;">+${plan.plan_exercises.length - 3} ${t('workout.exercises_in_workout')}</p>` : ''}
                                 </div>
-                                <button onclick="startWorkoutWithPlan('${plan.id}')" class="btn btn-primary" style="margin-top: 10px;">Start This Workout</button>
+                                <button onclick="startWorkoutWithPlan('${plan.id}')" class="btn btn-primary" style="margin-top: 10px;">${t('workout.start_workout')}</button>
                             </div>
                         `).join('')}
                     </div>
@@ -1033,8 +1056,8 @@ async function showAvailableWorkoutPlans() {
         } else {
             container.innerHTML = `
                 <div class="empty-state">
-                    <p>No workout plans available yet.</p>
-                    <p style="margin-top: 10px; opacity: 0.8;">Your personal trainer will create workout plans for you.</p>
+                    <p>${t('workout.no_plans_available')}</p>
+                    <p style="margin-top: 10px; opacity: 0.8;">${t('workout.pt_will_create')}</p>
                 </div>
             `;
         }
@@ -1055,7 +1078,165 @@ function showNoWorkout() {
 function showActiveWorkout() {
     document.getElementById('no-active-workout').style.display = 'none';
     document.getElementById('active-workout-container').style.display = 'block';
-    loadExercisesForLog();
+}
+
+async function showWorkoutPlanExercises(plan, isActive) {
+    const container = document.getElementById(isActive ? 'active-workout-container' : 'no-active-workout');
+
+    const exercisesHtml = plan.plan_exercises
+        .sort((a, b) => a.order - b.order)
+        .map((pe, index) => {
+            const exerciseImage = pe.exercise?.image_url ?
+                pe.exercise.image_url :
+                '/uploads/exercises/default-exercise.png';
+
+            return `
+            <div class="workout-exercise-card" data-exercise-id="${pe.exercise_id}" data-plan-exercise-id="${pe.id}">
+                <div class="exercise-layout">
+                    ${pe.exercise?.image_url ? `
+                        <div class="exercise-image-container">
+                            <img src="${exerciseImage}"
+                                 alt="${pe.exercise?.name || 'Exercise'}"
+                                 class="exercise-thumbnail"
+                                 onclick="showImageModal('${exerciseImage}', '${pe.exercise?.name || 'Exercise'}')"
+                                 onerror="this.style.display='none'">
+                        </div>
+                    ` : ''}
+                    <div class="exercise-content">
+                        <div class="exercise-header">
+                            <h4>${index + 1}. ${pe.exercise?.name || 'Exercise'}</h4>
+                            <span class="muscle-tag">${pe.exercise?.muscle_group || ''}</span>
+                        </div>
+                        <div class="exercise-details">
+                            <div class="exercise-info">
+                                <span><strong>${t('workout.sets')}:</strong> ${pe.sets}</span>
+                                <span><strong>${t('workout.reps')}:</strong> ${pe.reps}</span>
+                                <span><strong>${t('workout.rest')}:</strong> ${pe.rest_time}s</span>
+                                <span><strong>${t('workout.suggested')}:</strong> ${pe.last_weight_used !== null && pe.last_weight_used !== undefined ? pe.last_weight_used : (pe.weight || 0)} kg</span>
+                            </div>
+                            ${isActive ? `
+                                <div class="exercise-input">
+                                    <label>${t('workout.weight_used')}:</label>
+                                    <input type="number"
+                                           class="weight-input"
+                                           step="0.5"
+                                           min="0"
+                                           placeholder="${pe.last_weight_used !== null && pe.last_weight_used !== undefined ? pe.last_weight_used : (pe.weight || 0)}"
+                                           data-exercise-index="${index}">
+                                    <button class="btn btn-small btn-success" onclick="markExerciseComplete(${index})">
+                                        ✓ ${t('workout.complete')}
+                                    </button>
+                                </div>
+                            ` : ''}
+                        </div>
+                        ${isActive ? `<div class="exercise-status" data-status-index="${index}"></div>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+        }).join('');
+
+    if (isActive) {
+        container.innerHTML = `
+            <div class="workout-header">
+                <div class="workout-info">
+                    <h3>${plan.name}</h3>
+                    <p>${plan.description || ''}</p>
+                </div>
+                <div class="workout-timer">
+                    <span>Time:</span>
+                    <span id="workout-timer" class="timer-display">00:00:00</span>
+                </div>
+            </div>
+            <div class="workout-progress">
+                <span id="progress-text">0 / ${plan.plan_exercises.length} exercises completed</span>
+                <button id="end-workout-btn" class="btn btn-danger" onclick="endWorkout()">End Workout</button>
+            </div>
+            <div class="exercises-list">
+                ${exercisesHtml}
+            </div>
+        `;
+        showActiveWorkout();
+    } else {
+        container.innerHTML = `
+            <div class="workout-preview">
+                <h3>${plan.name}</h3>
+                <p>${plan.description || ''}</p>
+                <p style="opacity: 0.8; margin: 15px 0;">
+                    <strong>${plan.plan_exercises.length} ${t('workout.exercises_in_workout')}</strong>
+                </p>
+                <button class="btn btn-primary btn-large" onclick="startWorkoutWithPlan('${plan.id}')" style="margin-bottom: 20px;">
+                    ${t('workout.start_workout')} 💪
+                </button>
+                <div class="exercises-preview">
+                    ${exercisesHtml}
+                </div>
+            </div>
+        `;
+        container.style.display = 'block';
+        document.getElementById('active-workout-container').style.display = 'none';
+    }
+}
+
+async function displayActiveWorkoutWithExercises() {
+    try {
+        const plan = await apiRequest(`/workout-plans/${activeWorkoutSession.workout_plan_id}`);
+        await showWorkoutPlanExercises(plan, true);
+    } catch (error) {
+        console.error('Failed to load workout plan:', error);
+    }
+}
+
+let completedExercises = [];
+
+function markExerciseComplete(index) {
+    const card = document.querySelector(`[data-exercise-index="${index}"]`).closest('.workout-exercise-card');
+    const weightInput = card.querySelector('.weight-input');
+    const weightUsed = parseFloat(weightInput.value) || 0;
+    const statusDiv = card.querySelector(`[data-status-index="${index}"]`);
+
+    if (!completedExercises.find(e => e.index === index)) {
+        completedExercises.push({
+            index,
+            exercise_id: card.dataset.exerciseId,
+            weight_used: weightUsed,
+            completed_at: new Date()
+        });
+
+        statusDiv.innerHTML = `<span class="status-complete">✓ Completed with ${weightUsed} kg</span>`;
+        statusDiv.style.color = '#4ade80';
+        weightInput.disabled = true;
+        card.querySelector('button').disabled = true;
+        card.style.opacity = '0.7';
+
+        updateProgress();
+        showAlert(`Exercise completed! Weight: ${weightUsed} kg`);
+    }
+}
+
+function updateProgress() {
+    const totalExercises = document.querySelectorAll('.workout-exercise-card').length;
+    const completed = completedExercises.length;
+    const progressText = document.getElementById('progress-text');
+
+    if (progressText) {
+        progressText.textContent = `${completed} / ${totalExercises} exercises completed`;
+    }
+}
+
+function showImageModal(imageUrl, exerciseName) {
+    const modal = document.createElement('div');
+    modal.className = 'image-modal';
+    modal.innerHTML = `
+        <div class="image-modal-overlay" onclick="this.parentElement.remove()">
+            <div class="image-modal-content" onclick="event.stopPropagation()">
+                <button class="image-modal-close" onclick="this.closest('.image-modal').remove()">×</button>
+                <h3>${exerciseName}</h3>
+                <img src="${imageUrl}" alt="${exerciseName}">
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
 }
 
 async function startWorkout() {
@@ -1083,9 +1264,36 @@ async function startWorkout() {
 async function endWorkout() {
     if (!activeWorkoutSession) return;
 
-    if (!confirm('Are you sure you want to end this workout?')) return;
+    const totalExercises = document.querySelectorAll('.workout-exercise-card').length;
+    const completed = completedExercises.length;
+
+    if (completed === 0) {
+        if (!confirm('You haven\'t logged any exercises. Are you sure you want to end this workout?')) return;
+    } else if (completed < totalExercises) {
+        if (!confirm(`You've completed ${completed} of ${totalExercises} exercises. End workout anyway?`)) return;
+    } else {
+        if (!confirm('Great job! End this workout?')) return;
+    }
 
     try {
+        // Save all completed exercises
+        for (const exercise of completedExercises) {
+            const planExercise = document.querySelector(`[data-exercise-id="${exercise.exercise_id}"]`);
+            const pe = planExercise.dataset.planExerciseId;
+
+            await apiRequest(`/workout-sessions/${activeWorkoutSession.id}/exercises`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    exercise_id: exercise.exercise_id,
+                    sets_completed: parseInt(planExercise.querySelector('.exercise-info span:nth-child(1)').textContent.split(':')[1]) || 3,
+                    reps_completed: parseInt(planExercise.querySelector('.exercise-info span:nth-child(2)').textContent.split(':')[1]) || 10,
+                    weight_used: exercise.weight_used,
+                    notes: null
+                })
+            });
+        }
+
+        // End the session
         await apiRequest(`/workout-sessions/${activeWorkoutSession.id}/end`, {
             method: 'POST'
         });
@@ -1096,26 +1304,35 @@ async function endWorkout() {
         }
 
         activeWorkoutSession = null;
-        showAlert('Workout completed!');
+        completedExercises = [];
+        showAlert(`Workout completed! You finished ${completed} exercises! 🎉`);
         showNoWorkout();
         loadDashboard();
+        loadWorkoutTab();
     } catch (error) {
         console.error('Failed to end workout:', error);
+        showAlert('Failed to save workout. Please try again.', 'error');
     }
 }
 
 function startTimer(startTime) {
     if (workoutTimer) clearInterval(workoutTimer);
 
+    // Parse the start time correctly from ISO string
+    const start = new Date(startTime);
+
     function updateTimer() {
         const now = new Date();
-        const diff = Math.floor((now - startTime) / 1000);
+        const diff = Math.floor((now - start) / 1000);
 
         const hours = Math.floor(diff / 3600).toString().padStart(2, '0');
         const minutes = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
         const seconds = (diff % 60).toString().padStart(2, '0');
 
-        document.getElementById('workout-timer').textContent = `${hours}:${minutes}:${seconds}`;
+        const timerElement = document.getElementById('workout-timer');
+        if (timerElement) {
+            timerElement.textContent = `${hours}:${minutes}:${seconds}`;
+        }
     }
 
     updateTimer();
@@ -1135,7 +1352,7 @@ async function loadExercisesForLog() {
 
 async function logExercise() {
     if (!activeWorkoutSession) {
-        showAlert('No active workout session', 'error');
+        showAlert(t('workout.no_active_session'), 'error');
         return;
     }
 
