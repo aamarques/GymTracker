@@ -110,6 +110,8 @@ async def update_workout_session(
     db: Session = Depends(get_db)
 ):
     """Update workout session (e.g., end session)"""
+    from app.services.metrics_service import update_metrics_after_workout
+
     session = db.query(WorkoutSession).filter(
         WorkoutSession.id == session_id,
         WorkoutSession.user_id == current_user.id
@@ -121,6 +123,11 @@ async def update_workout_session(
             detail="Workout session not found"
         )
 
+    # Track if workout is being ended
+    workout_ended = False
+    if session_update.end_time is not None and session.end_time is None:
+        workout_ended = True
+
     if session_update.notes is not None:
         session.notes = session_update.notes
     if session_update.end_time is not None:
@@ -128,6 +135,10 @@ async def update_workout_session(
 
     db.commit()
     db.refresh(session)
+
+    # Update metrics if workout was ended
+    if workout_ended:
+        update_metrics_after_workout(db, session_id)
 
     return session
 
@@ -139,6 +150,8 @@ async def end_workout_session(
     db: Session = Depends(get_db)
 ):
     """End workout session"""
+    from app.services.metrics_service import update_metrics_after_workout
+
     session = db.query(WorkoutSession).filter(
         WorkoutSession.id == session_id,
         WorkoutSession.user_id == current_user.id
@@ -159,6 +172,9 @@ async def end_workout_session(
     session.end_time = datetime.now()
     db.commit()
     db.refresh(session)
+
+    # Update metrics after workout completion
+    update_metrics_after_workout(db, session_id)
 
     return session
 

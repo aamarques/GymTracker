@@ -67,6 +67,8 @@ async def update_profile(
     db: Session = Depends(get_db)
 ):
     """Update current user profile"""
+    from app.services.metrics_service import track_weight_change
+
     # Check if username is being updated and if it's already taken
     if user_update.username is not None and user_update.username != current_user.username:
         existing_username = db.query(User).filter(
@@ -84,8 +86,14 @@ async def update_profile(
         current_user.name = user_update.name
     if user_update.language is not None:
         current_user.language = user_update.language
-    if user_update.weight is not None:
+
+    # Track weight change if updated
+    weight_changed = False
+    if user_update.weight is not None and user_update.weight != current_user.weight:
+        weight_changed = True
+        old_weight = current_user.weight
         current_user.weight = user_update.weight
+
     if user_update.height is not None:
         current_user.height = user_update.height
     if user_update.phone is not None:
@@ -95,6 +103,10 @@ async def update_profile(
 
     db.commit()
     db.refresh(current_user)
+
+    # Track weight change in history and update metrics
+    if weight_changed:
+        track_weight_change(db, current_user.id, current_user.weight)
 
     response = UserResponse.from_orm(current_user)
     response.bmi = calculate_bmi(current_user.weight, current_user.height)

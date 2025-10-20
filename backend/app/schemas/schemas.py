@@ -293,3 +293,73 @@ class AssignedExerciseResponse(AssignedExerciseBase):
 
     class Config:
         from_attributes = True
+
+
+# Weight History Schemas
+class WeightHistoryBase(BaseModel):
+    weight: float = Field(gt=0, description="Weight in kg")
+    notes: Optional[str] = None
+
+
+class WeightHistoryCreate(WeightHistoryBase):
+    pass
+
+
+class WeightHistoryResponse(WeightHistoryBase):
+    id: str
+    user_id: str
+    previous_weight: Optional[float] = None
+    days_since_last_change: Optional[int] = None
+    recorded_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# Client Metrics Schemas
+class ClientMetricsResponse(BaseModel):
+    id: str
+    client_id: str
+    personal_trainer_id: Optional[str] = None
+
+    # Workout metrics
+    total_workouts_completed: int
+    total_cardio_sessions: int
+    total_training_hours: float
+    total_training_days: int
+
+    # Series and reps
+    total_sets_completed: int
+    total_reps_completed: int
+
+    # Weight tracking
+    initial_weight: Optional[float] = None
+    current_weight: Optional[float] = None
+    lowest_weight: Optional[float] = None
+    highest_weight: Optional[float] = None
+    total_weight_changes: int
+    average_days_between_weight_changes: Optional[float] = None
+
+    # Reset tracking
+    times_workouts_reset: int
+    last_reset_date: Optional[datetime] = None
+    workouts_before_last_reset: int
+
+    # Consistency
+    consistency_percentage: Optional[float] = None
+    average_workout_duration_minutes: Optional[float] = None
+
+    # Timestamps
+    client_since: datetime
+    last_activity_date: Optional[datetime] = None
+    last_updated: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class ClientMetricsDetailedResponse(ClientMetricsResponse):
+    """Extended metrics response with client details"""
+    client_name: Optional[str] = None
+    client_email: Optional[str] = None
+    weight_history: List[WeightHistoryResponse] = []

@@ -21,6 +21,8 @@ async def create_cardio_session(
     db: Session = Depends(get_db)
 ):
     """Log a new cardio session"""
+    from app.services.metrics_service import update_metrics_after_cardio
+
     new_cardio = CardioSession(
         user_id=current_user.id,
         activity_type=cardio_data.activity_type,
@@ -35,6 +37,9 @@ async def create_cardio_session(
     db.add(new_cardio)
     db.commit()
     db.refresh(new_cardio)
+
+    # Update metrics after cardio session is logged
+    update_metrics_after_cardio(db, new_cardio.id)
 
     return new_cardio
 

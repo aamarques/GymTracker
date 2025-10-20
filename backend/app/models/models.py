@@ -56,6 +56,11 @@ class Exercise(Base):
     exercise_logs = relationship("ExerciseLog", back_populates="exercise")
     assigned_exercises = relationship("AssignedExercise", back_populates="exercise", cascade="all, delete-orphan")
 
+    @property
+    def image_url(self):
+        """Return the image URL path for frontend"""
+        return self.image_path if self.image_path else None
+
 
 class WorkoutPlan(Base):
     __tablename__ = "workout_plans"
@@ -158,5 +163,72 @@ class AssignedExercise(Base):
 
     # Relationships
     exercise = relationship("Exercise", back_populates="assigned_exercises")
+    client = relationship("User", foreign_keys=[client_id])
+    personal_trainer = relationship("User", foreign_keys=[personal_trainer_id])
+
+
+class WeightHistory(Base):
+    """
+    Tracks weight changes over time for each user
+    This allows calculating time between weight changes and tracking progress
+    """
+    __tablename__ = "weight_history"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    weight = Column(Float, nullable=False)  # kg
+    previous_weight = Column(Float, nullable=True)  # kg - previous weight for calculating difference
+    days_since_last_change = Column(Integer, nullable=True)  # days since last weight update
+    recorded_at = Column(DateTime(timezone=True), server_default=func.now())
+    notes = Column(Text, nullable=True)
+
+    # Relationships
+    user = relationship("User", foreign_keys=[user_id])
+
+
+class ClientMetrics(Base):
+    """
+    Stores aggregated metrics for clients that Personal Trainers can track
+    These metrics persist even if the client resets their workout count
+    """
+    __tablename__ = "client_metrics"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    client_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    personal_trainer_id = Column(String, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+
+    # Workout metrics (cumulative, never reset)
+    total_workouts_completed = Column(Integer, default=0)  # Total workouts ever completed
+    total_cardio_sessions = Column(Integer, default=0)  # Total cardio sessions ever completed
+    total_training_hours = Column(Float, default=0.0)  # Total hours of training
+    total_training_days = Column(Integer, default=0)  # Unique days with training activity
+
+    # Series and reps tracking
+    total_sets_completed = Column(Integer, default=0)
+    total_reps_completed = Column(Integer, default=0)
+
+    # Weight tracking
+    initial_weight = Column(Float, nullable=True)  # kg - weight when client started
+    current_weight = Column(Float, nullable=True)  # kg - current weight
+    lowest_weight = Column(Float, nullable=True)  # kg - lowest recorded weight
+    highest_weight = Column(Float, nullable=True)  # kg - highest recorded weight
+    total_weight_changes = Column(Integer, default=0)  # Number of times weight was updated
+    average_days_between_weight_changes = Column(Float, nullable=True)  # Average days between weight updates
+
+    # Client resets (when client zeros their workout count)
+    times_workouts_reset = Column(Integer, default=0)
+    last_reset_date = Column(DateTime(timezone=True), nullable=True)
+    workouts_before_last_reset = Column(Integer, default=0)
+
+    # Consistency metrics
+    consistency_percentage = Column(Float, nullable=True)  # % of days with activity since start
+    average_workout_duration_minutes = Column(Float, nullable=True)
+
+    # Timestamps
+    client_since = Column(DateTime(timezone=True), server_default=func.now())
+    last_activity_date = Column(DateTime(timezone=True), nullable=True)
+    last_updated = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
     client = relationship("User", foreign_keys=[client_id])
     personal_trainer = relationship("User", foreign_keys=[personal_trainer_id])

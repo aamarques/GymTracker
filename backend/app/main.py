@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.db.database import init_db
 from app.db.migrations import run_migrations
-from app.api import auth, users, exercises, workout_plans, workout_sessions, cardio
+from app.api import auth, users, exercises, workout_plans, workout_sessions, cardio, metrics
 from app.core.config import settings
 import os
 
@@ -34,6 +34,7 @@ app.include_router(exercises.router, prefix="/api")
 app.include_router(workout_plans.router, prefix="/api")
 app.include_router(workout_sessions.router, prefix="/api")
 app.include_router(cardio.router, prefix="/api")
+app.include_router(metrics.router, prefix="/api")
 
 
 @app.on_event("startup")
