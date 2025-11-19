@@ -6,13 +6,20 @@ A full-stack web application for Personal Trainers and Clients to manage workout
 
 ## Features
 
-### 🆕 Enhanced Role-Based System (V0.1.2)
+### 🆕 Client Metrics & Progress Tracking (V0.1.2)
 - **Personal Trainer Role:**
   - Create and manage exercise library
   - Add/remove clients from roster
   - Create custom workout plans for each client
   - Define exercises, sets, reps, weight, and rest time per workout
   - Mark workout plans as active for client's default
+  - **Track comprehensive client metrics:**
+    - Total workouts, cardio sessions, training hours, and unique training days
+    - Total sets and reps completed across all workouts
+    - Weight history with min/max tracking
+    - Consistency percentage and average workout duration
+    - View client progress trends and detailed analytics
+    - Dashboard summary with most active/consistent clients
   - Dedicated tabs: Dashboard, Exercises, My Clients, Profile
 - **Client Role:**
   - Self-registration with username and email
@@ -21,6 +28,11 @@ A full-stack web application for Personal Trainers and Clients to manage workout
   - Real-time workout timer and exercise logging
   - Track cardio sessions
   - Health metrics analysis with BMI and weight goal tracking
+  - **View personal metrics and progress:**
+    - Personal dashboard with workout statistics
+    - Weight history tracking with trend analysis
+    - Progress analysis with recent workout trends
+    - Option to reset workout count (metrics preserved for PT)
   - Dedicated tabs: Dashboard, Active Workout, Cardio, Profile
 
 ### 🌍 Internationalization (V0.1.0)
@@ -39,6 +51,10 @@ A full-stack web application for Personal Trainers and Clients to manage workout
 ### Exercise Library
 - Create and manage exercises with images
 - Upload exercise images (PNG, JPG, JPEG, GIF)
+- **Bulk import exercises from CSV files** (two formats supported)
+  - Portuguese format: Google Sheets with column-pair structure
+  - Standard format: CSV with name, muscle_group, equipment, description, image_path
+- Automatic muscle group mapping (Portuguese → English)
 - Filter by muscle group
 - Search functionality
 - Collapsible exercise descriptions
@@ -166,6 +182,18 @@ Open your browser and navigate to:
    - Password must be at least 8 characters
 
 2. **Add exercises to the library**
+
+   **Option A: Bulk Import (Recommended)**
+   ```bash
+   # For Portuguese CSV (Google Sheets format with column pairs)
+   ./import-exercises-pt.sh Imports/exercicios.csv
+
+   # For standard CSV format
+   ./import-exercises.sh exercises_template.csv
+   ```
+   See **[Exercise Import Guide](IMPORT_EXERCISES_GUIDE.md)** for detailed instructions.
+
+   **Option B: Manual Entry**
    - Go to "Exercises" tab
    - Click "Add Exercise"
    - Upload exercise images for better visualization
@@ -250,6 +278,17 @@ Gym/
 - `GET /api/cardio/{id}` - Get cardio session details
 - `PUT /api/cardio/{id}` - Update cardio session
 - `DELETE /api/cardio/{id}` - Delete cardio session
+
+#### Metrics & Progress
+- `GET /api/metrics/my-metrics` - Get current user's metrics (Client)
+- `GET /api/metrics/my-progress` - Get detailed progress analysis (Client)
+- `GET /api/metrics/weight-history` - Get weight history (Client)
+- `POST /api/metrics/workouts/reset` - Reset workout count (Client)
+- `GET /api/metrics/clients` - Get all clients' metrics (Personal Trainer)
+- `GET /api/metrics/clients/{id}` - Get specific client metrics (Personal Trainer)
+- `GET /api/metrics/clients/{id}/progress` - Get client progress analysis (Personal Trainer)
+- `GET /api/metrics/clients/{id}/weight-history` - Get client weight history (Personal Trainer)
+- `GET /api/metrics/dashboard-summary` - Get PT dashboard summary (Personal Trainer)
 
 ### Running Tests
 
@@ -424,6 +463,8 @@ podman stop gym_nginx gym_backend gym_postgres  # Stop all
 
 ### Quick Links
 - **[Quick Start Guide](docs/QUICK_START.md)** - Get running in 5 minutes
+- **[Exercise Import Guide](IMPORT_EXERCISES_GUIDE.md)** - Import exercises from CSV files
+- **[Admin Guide](ADMIN_GUIDE.md)** - Admin scripts and user management
 - **[WSL2 + Podman Setup](docs/WSL2_PODMAN_SETUP.md)** - WSL2/Podman configuration guide
 - **[API Documentation](docs/API.md)** - Complete API reference
 - **[Development Guide](docs/DEVELOPMENT.md)** - Developer setup and workflow
@@ -471,6 +512,17 @@ For issues and questions:
 - ✅ Create workout plans directly for specific clients
 - ✅ View client details (BMI, weight, height)
 - ✅ Workout plans assigned to clients (not PTs)
+
+**📊 Comprehensive Metrics & Progress Tracking:**
+- ✅ Automatic tracking of all workout and cardio activities
+- ✅ Cumulative metrics that persist across workout resets
+- ✅ Weight history tracking with min/max values
+- ✅ Consistency percentage and training day tracking
+- ✅ Total sets and reps completed tracking
+- ✅ Personal Trainer dashboard with client summaries
+- ✅ Detailed progress analysis with 30-day trends
+- ✅ Client ability to reset workout count (metrics preserved for PT)
+- ✅ Weight change tracking with time intervals
 
 **🏋️ Workout Management:**
 - ✅ Workout plan creation with active/inactive toggle

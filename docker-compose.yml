@@ -55,7 +55,11 @@ services:
 
 volumes:
   postgres_data:
+    external: true
+    name: gymtracker_postgres_data
   backend_uploads:
+    external: true
+    name: gymtracker_backend_uploads
 
 networks:
   gym_network:

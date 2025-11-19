@@ -1,20 +1,28 @@
 # Gym Workout Tracker - Project Summary
 
-## Project Completion Status: ✅ COMPLETE
+## Project Completion Status: ✅ ACTIVE DEVELOPMENT
+
+**Current Version:** 0.1.2 (January 2025)
 
 ### What Was Built
 
-A fully functional, production-ready gym workout tracker web application with the following components:
+A fully functional, production-ready multi-tenant gym workout tracker web application for Personal Trainers and Clients with the following components:
 
 #### Backend API (FastAPI)
-- ✅ User authentication system with JWT tokens
+- ✅ User authentication system with JWT tokens (username OR email login)
 - ✅ Secure password hashing with bcrypt
 - ✅ User registration and profile management
+- ✅ **Role-based access control (Personal Trainer & Client)**
+- ✅ **Multi-language support (English & Portuguese)**
 - ✅ Exercise library with image upload support
-- ✅ Workout plan CRUD operations
+- ✅ Workout plan CRUD operations (with active/inactive status)
 - ✅ Active workout session tracking
 - ✅ Exercise logging during workouts
 - ✅ Cardio session tracking
+- ✅ **Comprehensive client metrics tracking**
+- ✅ **Weight history tracking with analytics**
+- ✅ **Progress analysis with trend detection**
+- ✅ **Client-Trainer relationship management**
 - ✅ Dashboard statistics endpoint
 - ✅ Comprehensive data validation with Pydantic
 - ✅ SQLAlchemy ORM with PostgreSQL
@@ -22,16 +30,21 @@ A fully functional, production-ready gym workout tracker web application with th
 
 #### Frontend Application
 - ✅ Responsive single-page application
-- ✅ User authentication UI (login/register)
+- ✅ User authentication UI (login with username OR email)
+- ✅ **Role-based UI (different tabs for PT and Client)**
+- ✅ **Language switcher (English/Portuguese)**
 - ✅ Dashboard with statistics
+- ✅ **Personal Trainer: Client roster management**
+- ✅ **Personal Trainer: Client metrics and progress tracking**
 - ✅ Exercise library browser with search and filters
 - ✅ Exercise creation with image upload
-- ✅ Workout plan creator
+- ✅ Workout plan creator (with active plan toggle)
 - ✅ Active workout tracker with real-time timer
 - ✅ Exercise logging interface
 - ✅ Cardio session logger
 - ✅ User profile management
 - ✅ BMI and age calculation
+- ✅ **Desired weight goal tracking**
 - ✅ Mobile-responsive design
 
 #### Infrastructure
@@ -152,13 +165,16 @@ Gym/
 ### Database Schema
 
 **Tables:**
-- users - User accounts and profiles
+- users - User accounts and profiles (with roles: Personal Trainer / Client)
 - exercises - Exercise library with images
-- workout_plans - User workout plans
+- workout_plans - User workout plans (with active/inactive status)
 - plan_exercises - Exercises in plans (junction table)
 - workout_sessions - Active/completed workouts
 - exercise_logs - Exercise performance logs
 - cardio_sessions - Cardio activity tracking
+- **assigned_exercises** - PT assigns exercises to clients (junction table)
+- **client_metrics** - Comprehensive client progress tracking
+- **weight_history** - Historical weight changes with timestamps
 
 ### API Endpoints
 
@@ -199,6 +215,17 @@ Gym/
 - GET /api/cardio/{id}
 - PUT /api/cardio/{id}
 - DELETE /api/cardio/{id}
+
+**Metrics & Progress:**
+- GET /api/metrics/my-metrics (Client)
+- GET /api/metrics/my-progress (Client)
+- GET /api/metrics/weight-history (Client)
+- POST /api/metrics/workouts/reset (Client)
+- GET /api/metrics/clients (Personal Trainer)
+- GET /api/metrics/clients/{id} (Personal Trainer)
+- GET /api/metrics/clients/{id}/progress (Personal Trainer)
+- GET /api/metrics/clients/{id}/weight-history (Personal Trainer)
+- GET /api/metrics/dashboard-summary (Personal Trainer)
 
 ### Technologies Used
 
@@ -312,8 +339,26 @@ Gym/
 
 ### Conclusion
 
-This project is a complete, production-ready gym workout tracking application with all requested features implemented. The codebase is clean, well-organized, and follows best practices for security and scalability.
+This project is a complete, production-ready multi-tenant gym workout tracking application with comprehensive features for both Personal Trainers and Clients. The codebase is clean, well-organized, and follows best practices for security and scalability.
 
-To start using the application, simply run Docker and execute `./start.sh` or `docker-compose up -d`.
+**Current Status: ✅ Active Development (v0.1.2)**
 
-**Status: ✅ Ready for use!**
+**Recent Additions (v0.1.2):**
+- Comprehensive client metrics and progress tracking
+- Weight history with analytics
+- Personal Trainer dashboard with client summaries
+- Automatic metric updates from workouts and cardio
+
+To start using the application:
+```bash
+# Using Podman (recommended for WSL2)
+bash start-containers.sh
+
+# Using Docker Compose
+docker-compose up -d
+```
+
+**Next Steps:**
+- See CHANGELOG.md for version history
+- See docs/FUTURE_IMPROVEMENTS.md for roadmap
+- Access interactive API docs at http://localhost:8000/docs
