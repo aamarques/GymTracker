@@ -13,8 +13,11 @@ Complete guide to install GymTracker on a new computer.
 - **Network:** Internet connection for initial setup
 
 ### Software Requirements
-- **Docker** OR **Podman** (container runtime)
+- **Docker** (recommended - easier setup)
+- **Docker Compose** (included with docker.io package)
 - **Git** (optional, for cloning repository)
+
+> **Note:** Docker is recommended for new installations due to easier setup and better compatibility. Podman can also be used but requires additional configuration.
 
 ---
 
@@ -158,23 +161,31 @@ SMTP_PASSWORD=your-app-password
 
 ## 🚀 Step 4: Start the Application
 
-### Using Podman (Recommended for WSL2/Linux)
+### Method 1: Using Docker (Recommended)
 
+**Option A: Simple startup script**
+```bash
+# Use the Docker startup script
+./start-docker.sh
+```
+
+**Option B: Direct docker-compose**
 ```bash
 # Start containers
+docker-compose up -d
+
+# Or with sudo if needed
+sudo docker-compose up -d
+```
+
+### Method 2: Using Podman (Advanced - requires configuration)
+
+```bash
+# Start containers (requires prior setup)
 ./start-containers.sh
 ```
 
-### Using Docker Compose
-
-```bash
-# For WSL2 (disable BuildKit)
-export DOCKER_BUILDKIT=0
-export COMPOSE_DOCKER_CLI_BUILD=0
-
-# Start containers
-docker-compose up -d
-```
+> **Note:** Podman requires additional configuration (user namespaces, FUSE). Docker is recommended for simpler installation.
 
 ### What This Does
 
@@ -193,13 +204,13 @@ The startup script will:
 
 ### Open Your Browser
 
-**For Podman (default):**
-- Main App: **http://localhost:8080**
-- API Docs: **http://localhost:8080/docs**
-
-**For Docker Compose:**
+**For Docker (recommended):**
 - Main App: **http://localhost**
 - API Docs: **http://localhost/docs**
+
+**For Podman:**
+- Main App: **http://localhost:8080**
+- API Docs: **http://localhost:8080/docs**
 
 ### Create Your First Account
 
