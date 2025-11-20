@@ -25,7 +25,14 @@ Welcome to the Gym Workout Tracker documentation! This index will help you find 
   - Exercise CRUD operations
   - Workout plans and sessions
   - Cardio tracking
+  - **Metrics & Progress Tracking**
   - Error handling
+- **[Client Metrics Documentation](../METRICS_DOCUMENTATION.md)** - Comprehensive metrics guide
+  - Client metrics overview
+  - API endpoints for metrics
+  - Personal Trainer dashboard
+  - Weight history tracking
+  - Progress analysis
 
 ### 🚢 Deployment
 - **[Deployment Guide](DEPLOYMENT.md)** - Production deployment
@@ -261,12 +268,18 @@ If you find errors or want to improve the documentation:
 
 ## Document History
 
+- **2025-01-20**: Version 0.1.2 documentation updates
+  - Added Metrics & Progress Tracking documentation
+  - Updated API documentation with metrics endpoints
+  - Updated all docs to reflect role-based system
+  - Added client metrics system documentation
+
 - **2025-10-19**: WSL2/Podman configuration guide added
   - WSL2 + Podman Setup Guide
   - Troubleshooting for netavark/nftables issues
   - Privileged port binding solutions
 
-- **2025-10-12**: Initial comprehensive documentation created
+- **2025-10-15**: Version 0.1.0 comprehensive documentation created
   - Quick Start Guide
   - API Documentation
   - Development Guide

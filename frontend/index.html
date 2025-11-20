@@ -28,6 +28,9 @@
                         <label for="login-password" data-i18n="auth.password">Password</label>
                         <input type="password" id="login-password" required>
                     </div>
+                    <div class="form-group" style="text-align: right;">
+                        <a href="#" id="forgot-password-link" data-i18n="auth.forgot_password" style="font-size: 0.9em; color: var(--primary-color);">Forgot Password?</a>
+                    </div>
                     <button type="submit" class="btn btn-primary" data-i18n="auth.login">Login</button>
                 </form>
                 <p class="auth-switch">
@@ -55,6 +58,10 @@
                     <div class="form-group">
                         <label for="register-password" data-i18n="auth.password">Password</label>
                         <input type="password" id="register-password" minlength="8" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-confirm-password" data-i18n="auth.confirm_password">Confirm Password</label>
+                        <input type="password" id="register-confirm-password" minlength="8" required>
                     </div>
                     <div class="form-group">
                         <label for="register-role" data-i18n="auth.role">Account Type</label>
@@ -173,13 +180,15 @@
                     <input type="text" id="exercise-search" data-i18n="exercises.search" placeholder="Search exercises...">
                     <select id="muscle-filter">
                         <option value="" data-i18n="exercises.all">All Muscle Groups</option>
-                        <option value="chest" data-i18n="muscle.chest">Chest</option>
-                        <option value="back" data-i18n="muscle.back">Back</option>
-                        <option value="legs" data-i18n="muscle.legs">Legs</option>
-                        <option value="shoulders" data-i18n="muscle.shoulders">Shoulders</option>
-                        <option value="biceps" data-i18n="muscle.biceps">Biceps</option>
-                        <option value="triceps" data-i18n="muscle.triceps">Triceps</option>
-                        <option value="abs" data-i18n="muscle.abs">Abs</option>
+                        <option value="Chest" data-i18n="muscle.chest">Chest</option>
+                        <option value="Back" data-i18n="muscle.back">Back</option>
+                        <option value="Legs" data-i18n="muscle.legs">Legs</option>
+                        <option value="Glutes" data-i18n="muscle.glutes">Glutes</option>
+                        <option value="Shoulders" data-i18n="muscle.shoulders">Shoulders</option>
+                        <option value="Biceps" data-i18n="muscle.biceps">Biceps</option>
+                        <option value="Triceps" data-i18n="muscle.triceps">Triceps</option>
+                        <option value="Abs" data-i18n="muscle.abs">Abs</option>
+                        <option value="Cardio" data-i18n="muscle.cardio">Cardio</option>
                     </select>
                 </div>
                 <div id="exercises-list" class="exercises-grid"></div>
@@ -287,6 +296,12 @@
                             <button type="submit" class="btn btn-primary" data-i18n="profile.update">Update Profile</button>
                         </form>
 
+                        <!-- Change Password Section -->
+                        <div class="profile-section" style="margin-top: 2rem;">
+                            <h3 data-i18n="profile.security">Security</h3>
+                            <button type="button" class="btn btn-secondary" onclick="openChangePasswordModal()" data-i18n="profile.change_password">Change Password</button>
+                        </div>
+
                         <!-- Health Metrics Analysis -->
                         <div class="health-metrics-section">
                             <h3 data-i18n="profile.health_metrics">Health Metrics Analysis</h3>
@@ -298,6 +313,66 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- Password Modals -->
+    <!-- Forgot Password Modal -->
+    <div id="forgot-password-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close" onclick="closeForgotPasswordModal()">&times;</span>
+            <h2 data-i18n="auth.forgot_password">Forgot Password</h2>
+            <form id="forgot-password-form">
+                <div class="form-group">
+                    <label for="forgot-email" data-i18n="auth.email_or_username">Email or Username</label>
+                    <input type="text" id="forgot-email" required>
+                    <small data-i18n="auth.reset_instructions">Enter your email or username and we'll send you a password reset link.</small>
+                </div>
+                <button type="submit" class="btn btn-primary" data-i18n="auth.send_reset_link">Send Reset Link</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Reset Password Modal -->
+    <div id="reset-password-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close" onclick="closeResetPasswordModal()">&times;</span>
+            <h2 data-i18n="auth.reset_password">Reset Password</h2>
+            <form id="reset-password-form">
+                <input type="hidden" id="reset-token">
+                <div class="form-group">
+                    <label for="reset-new-password" data-i18n="auth.new_password">New Password</label>
+                    <input type="password" id="reset-new-password" minlength="8" required>
+                </div>
+                <div class="form-group">
+                    <label for="reset-confirm-password" data-i18n="auth.confirm_password">Confirm Password</label>
+                    <input type="password" id="reset-confirm-password" minlength="8" required>
+                </div>
+                <button type="submit" class="btn btn-primary" data-i18n="auth.reset_password">Reset Password</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div id="change-password-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close" onclick="closeChangePasswordModal()">&times;</span>
+            <h2 data-i18n="profile.change_password">Change Password</h2>
+            <form id="change-password-form">
+                <div class="form-group">
+                    <label for="current-password" data-i18n="profile.current_password">Current Password</label>
+                    <input type="password" id="current-password" required>
+                </div>
+                <div class="form-group">
+                    <label for="new-password" data-i18n="profile.new_password">New Password</label>
+                    <input type="password" id="new-password" minlength="8" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirm-new-password" data-i18n="profile.confirm_new_password">Confirm New Password</label>
+                    <input type="password" id="confirm-new-password" minlength="8" required>
+                </div>
+                <button type="submit" class="btn btn-primary" data-i18n="profile.change_password">Change Password</button>
+            </form>
+        </div>
     </div>
 
     <!-- Modals will be added dynamically via JavaScript -->

@@ -23,31 +23,55 @@ Open your browser:
 1. Go to http://localhost:8080
 2. Click "Register"
 3. Fill in your details:
-   - Email
-   - Password (min 8 characters)
-   - Name
-   - Date of Birth (format: YYYY-MM-DDTHH:MM:SS)
-   - Weight (kg)
-   - Height (cm)
+   - **Role**: Choose Personal Trainer or Client
+   - **Username**: Unique username for login
+   - **Email**: Your email address
+   - **Password**: Min 8 characters
+   - **Name**: Your full name
+   - **Language**: English or Portuguese
+   - **Date of Birth**: (format: YYYY-MM-DDTHH:MM:SS)
+   - **Weight** (kg) - for Clients only
+   - **Height** (cm) - for Clients only
+   - **Desired Weight** (optional) - for Clients only
 4. Click "Register"
+
+**Note**:
+- Personal Trainers can manage exercises, clients, and workout plans
+- Clients can track workouts, view metrics, and follow assigned plans
 
 ### 4. Start Using the App
 
-**Add Exercises:**
+#### For Personal Trainers:
+
+**Add Exercises to Library:**
 1. Go to "Exercises" tab
 2. Click "Add Exercise"
 3. Fill in exercise details
 4. Upload an image (optional)
 
-**Create Workout Plan:**
-1. Go to "Workout Plans" tab
-2. Click "Create Plan"
-3. Add exercises from your library
-4. Set sets, reps, and rest times
+**Add Clients:**
+1. Go to "My Clients" tab
+2. Click "Add Client"
+3. Enter client's email or username
+4. View client roster and metrics
 
-**Start Workout:**
+**Create Workout Plans for Clients:**
+1. Go to "My Clients" tab
+2. Select a client
+3. Click "Create Workout"
+4. Add exercises and configure sets/reps
+5. Mark as "Active Plan" for client's default
+
+**View Client Progress:**
+1. Go to "My Clients" tab
+2. Click on a client to view detailed metrics
+3. See weight history, consistency, and workout trends
+
+#### For Clients:
+
+**View Assigned Workout:**
 1. Go to "Active Workout" tab
-2. Select a workout plan (or freestyle)
+2. See your active workout plan from your trainer
 3. Click "Start Workout"
 4. Log exercises as you complete them
 5. Click "End Workout" when done
@@ -55,8 +79,14 @@ Open your browser:
 **Track Cardio:**
 1. Go to "Cardio" tab
 2. Click "Log Cardio"
-3. Enter activity details
+3. Enter activity details (running, cycling, etc.)
 4. Save
+
+**View Your Progress:**
+1. Go to "Dashboard" tab
+2. See your workout statistics and trends
+3. Check your weight history
+4. View consistency and training days
 
 ---
 

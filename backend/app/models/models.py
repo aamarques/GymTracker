@@ -232,3 +232,21 @@ class ClientMetrics(Base):
     # Relationships
     client = relationship("User", foreign_keys=[client_id])
     personal_trainer = relationship("User", foreign_keys=[personal_trainer_id])
+
+
+class PasswordResetToken(Base):
+    """
+    Stores password reset tokens for users who forgot their password
+    Tokens expire after a set time period
+    """
+    __tablename__ = "password_reset_tokens"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    token = Column(String, nullable=False, unique=True, index=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    used = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    user = relationship("User", foreign_keys=[user_id])

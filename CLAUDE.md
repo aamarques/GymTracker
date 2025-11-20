@@ -81,13 +81,21 @@ Access the application at:
 
 ## Key Features
 
-- User registration and JWT authentication
+### Role-Based System (v0.1.2)
+- **Personal Trainers**: Manage exercise library, clients, and workout plans
+- **Clients**: Track workouts, cardio, and progress
+
+### Core Features
+- User registration and JWT authentication (username OR email login)
+- Multi-language support (English & Portuguese)
 - Exercise library with image uploads
-- Workout plan creation and management
+- Workout plan creation and management (with active/inactive status)
 - Active workout sessions with real-time timer
 - Cardio session tracking
-- Dashboard with statistics
-- Profile management with BMI calculation
+- Comprehensive metrics and progress tracking
+- Weight history tracking with analytics
+- Dashboard with statistics and trends
+- Profile management with BMI calculation and desired weight goals
 
 ## Security Features
 

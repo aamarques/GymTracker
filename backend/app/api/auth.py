@@ -4,7 +4,16 @@ from sqlalchemy.orm import Session
 from datetime import timedelta
 from app.db.database import get_db
 from app.models.models import User, UserRole
-from app.schemas.schemas import UserCreate, UserResponse, Token, LoginRequest
+from app.schemas.schemas import (
+    UserCreate,
+    UserResponse,
+    Token,
+    LoginRequest,
+    ChangePasswordRequest,
+    PasswordResetRequest,
+    PasswordResetConfirm,
+    PasswordResetResponse
+)
 from app.core.security import (
     get_password_hash,
     verify_password,
@@ -143,3 +152,161 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
     response.bmi = calculate_bmi(current_user.weight, current_user.height)
     response.age = calculate_age(current_user.date_of_birth)
     return response
+
+
+@router.post("/change-password")
+async def change_password(
+    password_data: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Change password for authenticated user"""
+    # Verify current password
+    if not verify_password(password_data.current_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect"
+        )
+
+    # Validate new password strength
+    if not validate_password_strength(password_data.new_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be at least 8 characters long"
+        )
+
+    # Check if new password is different from current
+    if verify_password(password_data.new_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be different from current password"
+        )
+
+    # Update password
+    current_user.hashed_password = get_password_hash(password_data.new_password)
+    db.commit()
+
+    return {"message": "Password changed successfully"}
+
+
+@router.post("/forgot-password", response_model=PasswordResetResponse)
+async def forgot_password(
+    request_data: PasswordResetRequest,
+    db: Session = Depends(get_db)
+):
+    """Request password reset (generates token and sends email)"""
+    from app.models.models import PasswordResetToken
+    from app.services.email_service import send_password_reset_email
+    import secrets
+
+    # Find user by email or username
+    user = db.query(User).filter(
+        (User.email == request_data.email) | (User.username == request_data.email)
+    ).first()
+
+    # Always return success message to prevent user enumeration
+    success_message = "If an account with that email/username exists, a password reset link has been sent."
+
+    if not user:
+        return {
+            "message": success_message,
+            "reset_token": None
+        }
+
+    # Generate reset token
+    reset_token = secrets.token_urlsafe(32)
+
+    # Expire old tokens for this user
+    old_tokens = db.query(PasswordResetToken).filter(
+        PasswordResetToken.user_id == user.id,
+        PasswordResetToken.used == False
+    ).all()
+    for token in old_tokens:
+        token.used = True
+
+    # Create new reset token (expires in 1 hour)
+    from datetime import datetime, timedelta, timezone
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+
+    new_token = PasswordResetToken(
+        user_id=user.id,
+        token=reset_token,
+        expires_at=expires_at
+    )
+
+    db.add(new_token)
+    db.commit()
+
+    # Send password reset email
+    try:
+        send_password_reset_email(
+            to_email=user.email,
+            reset_token=reset_token,
+            user_name=user.name
+        )
+    except Exception as e:
+        # Log error but don't reveal it to user (security)
+        print(f"Error sending password reset email: {str(e)}")
+        # Still return success to prevent user enumeration
+
+    # Return success (email sent or not, don't reveal)
+    return {
+        "message": success_message,
+        "reset_token": reset_token if settings.DEBUG else None  # Only in DEBUG mode
+    }
+
+
+@router.post("/reset-password")
+async def reset_password(
+    reset_data: PasswordResetConfirm,
+    db: Session = Depends(get_db)
+):
+    """Reset password using token"""
+    from app.models.models import PasswordResetToken
+    from datetime import datetime, timezone
+
+    # Find token
+    token_record = db.query(PasswordResetToken).filter(
+        PasswordResetToken.token == reset_data.token,
+        PasswordResetToken.used == False
+    ).first()
+
+    if not token_record:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset token"
+        )
+
+    # Check if token is expired
+    if token_record.expires_at < datetime.now(timezone.utc):
+        token_record.used = True
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Reset token has expired"
+        )
+
+    # Get user
+    user = db.query(User).filter(User.id == token_record.user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    # Validate new password strength
+    if not validate_password_strength(reset_data.new_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 8 characters long"
+        )
+
+    # Update password
+    user.hashed_password = get_password_hash(reset_data.new_password)
+
+    # Mark token as used
+    token_record.used = True
+
+    db.commit()
+
+    return {"message": "Password has been reset successfully"}

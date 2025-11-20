@@ -8,6 +8,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "Starting Gym Tracker containers..."
 
+# Create network
+podman network create gym_network 2>/dev/null || true
+
 # Create volumes
 podman volume create gym_postgres_data 2>/dev/null || true
 podman volume create gym_backend_uploads 2>/dev/null || true
@@ -16,6 +19,7 @@ podman volume create gym_backend_uploads 2>/dev/null || true
 echo "Starting PostgreSQL..."
 podman run -d \
   --name gym_postgres \
+  --network gym_network \
   -e POSTGRES_USER=gymuser \
   -e POSTGRES_PASSWORD=gympass123 \
   -e POSTGRES_DB=gymtracker \
@@ -38,23 +42,24 @@ echo "PostgreSQL is ready!"
 echo "Starting Backend..."
 podman run -d \
   --name gym_backend \
-  -e DATABASE_URL="postgresql://gymuser:gympass123@localhost:5432/gymtracker" \
+  --network gym_network \
+  -e DATABASE_URL="postgresql://gymuser:gympass123@gym_postgres:5432/gymtracker" \
   -e SECRET_KEY="your-secret-key-change-this-in-production" \
   -e ALGORITHM="HS256" \
   -e ACCESS_TOKEN_EXPIRE_MINUTES=30 \
   -v "$SCRIPT_DIR/backend:/app:Z" \
   -v gym_backend_uploads:/app/uploads \
-  --network host \
   localhost/gym_backend:latest
 
 # Start Nginx
 echo "Starting Nginx..."
 podman run -d \
   --name gym_nginx \
+  --network gym_network \
+  -p 8080:80 \
   -v "$SCRIPT_DIR/nginx/nginx.conf:/etc/nginx/nginx.conf:ro,Z" \
   -v "$SCRIPT_DIR/frontend:/usr/share/nginx/html:ro,Z" \
   -v gym_backend_uploads:/usr/share/nginx/html/uploads:ro \
-  --network host \
   docker.io/library/nginx:alpine
 
 echo ""

@@ -5,7 +5,65 @@ All notable changes to the Gym Workout Tracker project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.0] - 2025-10-12
+## [0.1.2] - 2025-01-20
+
+### Added
+- **Comprehensive Client Metrics System**
+  - Automatic tracking of all workout and cardio activities
+  - Cumulative metrics that persist even when clients reset their workout count
+  - Weight history tracking with min/max values and time intervals
+  - Consistency percentage calculation based on active training days
+  - Total sets and reps tracking across all workouts
+  - Detailed progress analysis with 30-day workout trends
+  - Client ability to reset workout count while preserving PT visibility
+
+- **Personal Trainer Dashboard Enhancements**
+  - View metrics for all clients in one place
+  - Dashboard summary with aggregate statistics
+  - Most active and most consistent client highlights
+  - Individual client detailed metrics and progress
+  - Client weight history tracking and analysis
+
+- **New API Endpoints**
+  - `GET /api/metrics/my-metrics` - Client metrics overview
+  - `GET /api/metrics/my-progress` - Client progress analysis
+  - `GET /api/metrics/weight-history` - Client weight history
+  - `POST /api/metrics/workouts/reset` - Reset workout count
+  - `GET /api/metrics/clients` - PT view all clients
+  - `GET /api/metrics/clients/{id}` - PT view client details
+  - `GET /api/metrics/clients/{id}/progress` - PT view client progress
+  - `GET /api/metrics/clients/{id}/weight-history` - PT view client weight history
+  - `GET /api/metrics/dashboard-summary` - PT dashboard summary
+
+### Changed
+- Weight updates now automatically tracked in weight history table
+- Workout sessions automatically update client metrics
+- Cardio sessions automatically update client metrics
+- Enhanced client-trainer relationship tracking
+
+### Database
+- Added `client_metrics` table for comprehensive client tracking
+- Added `weight_history` table for weight change tracking
+- Migration for existing users to initialize metrics
+
+---
+
+## [0.1.1] - 2025-10-19
+
+### Fixed
+- Fixed nginx configuration for Docker container networking
+- Fixed database enum type mismatch (role field)
+- Fixed SQLAlchemy enum handling for user roles
+
+### Changed
+- Improved empty state messages for Exercises, Workout Plans, and Clients
+- Added role-specific empty state guidance
+- Added glassmorphism styling for empty states
+- Enhanced multilingual support for empty state messages
+
+---
+
+## [0.1.0] - 2025-10-15
 
 ### Added
 - Comprehensive documentation suite
@@ -39,7 +97,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed password truncation to meet bcrypt requirements
 - Enhanced JWT token security documentation
 
-## [1.0.0] - 2025-10-10
+## [0.0.1] - 2025-10-10
 
 ### Added
 - Initial release
@@ -90,29 +148,52 @@ Features and fixes in development:
 
 ## Release Notes
 
-### Version 1.1.0 Notes
+### Version 0.1.2 Notes
 
-This release focuses on improving developer experience and deployment flexibility, particularly for WSL2 users. The major change is the switch from passlib to direct bcrypt implementation, which resolves compatibility issues across different environments.
+This release introduces a comprehensive metrics and progress tracking system that enables Personal Trainers to monitor their clients' progress in detail. Key highlights:
 
-**Important for Existing Deployments:**
-- If upgrading from 1.0.0, rebuild your backend container to get the new bcrypt dependency
-- Existing password hashes remain compatible with the new implementation
-- WSL2 users should switch to the Podman deployment script for better reliability
+**For Personal Trainers:**
+- Track all client activities automatically
+- View aggregate statistics across all clients
+- Monitor individual client progress and consistency
+- Access detailed weight history for each client
 
-**Migration Steps:**
-1. Stop existing containers
-2. Rebuild backend: `podman build -t localhost/gym_backend:latest backend/`
-3. Start with new script: `bash start-containers.sh`
+**For Clients:**
+- View personal workout statistics and trends
+- Track weight changes over time
+- Analyze progress with trend data
+- Reset workout count while preserving data for trainer
 
-### Version 1.0.0 Notes
+**Database Changes:**
+- New `client_metrics` table tracks cumulative client data
+- New `weight_history` table records all weight changes
+- Automatic migrations handle existing users
 
-Initial stable release with full feature set for personal gym workout tracking. Includes complete authentication system, exercise management, workout planning, and activity tracking.
+### Version 0.1.1 Notes
+
+Bug fixes and UX improvements focusing on role-based empty states and database compatibility.
+
+### Version 0.1.0 Notes
+
+Major release introducing multi-tenant system with Personal Trainer and Client roles, internationalization (English & Portuguese), and role-based workflows.
 
 ---
 
 ## Upgrade Guide
 
-### From 1.0.0 to 1.1.0
+### From 0.1.1 to 0.1.2
+
+#### Database Migration (Required)
+
+Version 0.1.2 adds new tables for metrics tracking:
+
+```bash
+# Docker Compose
+docker-compose exec backend alembic upgrade head
+
+# Podman
+podman exec gym_backend alembic upgrade head
+```
 
 #### For Docker Compose Users
 
@@ -123,11 +204,11 @@ docker-compose down
 # Pull latest changes
 git pull origin main
 
-# Rebuild with new dependencies
+# Rebuild and restart
 docker-compose up -d --build
 ```
 
-#### For Podman Users (New in 1.1.0)
+#### For Podman Users
 
 ```bash
 # Stop existing containers
@@ -137,36 +218,42 @@ podman rm gym_nginx gym_backend gym_postgres
 # Rebuild backend
 podman build -t localhost/gym_backend:latest backend/
 
-# Start with new script
+# Start with script
 bash start-containers.sh
 ```
 
-#### Database Migration
+**Important Notes:**
+- Existing users will have metrics automatically initialized
+- Weight history will begin tracking from first weight update after upgrade
+- No data loss - all existing workouts and data are preserved
 
-No database schema changes in 1.1.0, but run migrations to be safe:
+### From 0.1.0 to 0.1.1
 
 ```bash
-# Docker Compose
-docker-compose exec backend alembic upgrade head
+# Standard upgrade, no database changes
+docker-compose up -d --build
+```
 
-# Podman
-podman exec gym_backend alembic upgrade head
+### From 0.0.1 to 0.1.0
+
+```bash
+# Database migration required for role-based system
+docker-compose exec backend alembic upgrade head
+docker-compose up -d --build
 ```
 
 ---
 
 ## Deprecation Notices
 
-### Version 1.1.0
-- **Deprecated**: Using `passlib[bcrypt]` - Will be removed in 2.0.0
-  - **Replacement**: Direct `bcrypt` library (already implemented)
-  - **Action Required**: Update requirements.txt if maintaining custom fork
+### Version 0.1.2
+- None
 
 ---
 
 ## Known Issues
 
-### Version 1.1.0
+### Version 0.1.2
 - Docker Compose on WSL2 may encounter nftables errors
   - **Workaround**: Use Podman with `start-containers.sh`
   - **Workaround**: Disable BuildKit: `export DOCKER_BUILDKIT=0`
@@ -175,9 +262,12 @@ podman exec gym_backend alembic upgrade head
 - Large image uploads (>5MB) may timeout
   - **Workaround**: Adjust `client_max_body_size` in nginx.conf
 
-### Version 1.0.0
-- Bcrypt password hashing errors in some environments
-  - **Status**: Fixed in 1.1.0
+### Version 0.1.1
+- None (bug fix release)
+
+### Version 0.1.0
+- Enum type mismatches in database
+  - **Status**: Fixed in 0.1.1
 
 ---
 

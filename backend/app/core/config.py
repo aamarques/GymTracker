@@ -21,6 +21,13 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "/app/uploads"
     ALLOWED_IMAGE_EXTENSIONS: set = {".png", ".jpg", ".jpeg", ".gif"}
 
+    # Email Configuration (Gmail SMTP)
+    EMAIL_FROM: str = "your-email@gmail.com"  # Your Gmail address
+    EMAIL_PASSWORD: str = "your-app-password"  # Gmail App Password (NOT your regular password)
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 465
+    FRONTEND_URL: str = "http://localhost:8080"  # Frontend URL for reset links
+
     class Config:
         env_file = ".env"
         case_sensitive = True

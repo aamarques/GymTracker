@@ -698,6 +698,241 @@ Authorization: Bearer <token>
 
 ---
 
+## Metrics & Progress Tracking
+
+### Get My Metrics (Client)
+**GET** `/api/metrics/my-metrics`
+
+Get current user's comprehensive metrics.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response:** `200 OK`
+```json
+{
+  "id": "uuid-string",
+  "client_id": "uuid-string",
+  "personal_trainer_id": "uuid-string",
+  "total_workouts_completed": 25,
+  "total_cardio_sessions": 10,
+  "total_training_hours": 42.5,
+  "total_training_days": 30,
+  "total_sets_completed": 375,
+  "total_reps_completed": 4500,
+  "initial_weight": 85.0,
+  "current_weight": 80.5,
+  "lowest_weight": 79.8,
+  "highest_weight": 85.5,
+  "total_weight_changes": 8,
+  "average_days_between_weight_changes": 7.5,
+  "times_workouts_reset": 1,
+  "last_reset_date": "2025-01-15T10:30:00Z",
+  "workouts_before_last_reset": 15,
+  "consistency_percentage": 75.5,
+  "average_workout_duration_minutes": 65.2,
+  "client_since": "2024-10-01T00:00:00Z",
+  "last_activity_date": "2025-01-20T18:00:00Z"
+}
+```
+
+---
+
+### Get My Progress (Client)
+**GET** `/api/metrics/my-progress`
+
+Get detailed progress analysis for current user.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response:** `200 OK`
+```json
+{
+  "total_workouts": 25,
+  "total_training_hours": 42.5,
+  "total_training_days": 30,
+  "consistency_percentage": 75.5,
+  "average_workout_duration": 65.2,
+  "weight_change_kg": -4.5,
+  "weight_change_percentage": -5.3,
+  "recent_workout_trend": "improving",
+  "recent_workouts_30_days": 12,
+  "previous_workouts_30_days": 8,
+  "total_sets": 375,
+  "total_reps": 4500,
+  "times_reset": 1,
+  "days_since_start": 112
+}
+```
+
+---
+
+### Get Weight History (Client)
+**GET** `/api/metrics/weight-history`
+
+Get weight history for current user.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Query Parameters:**
+- `limit` (optional): Number of records to return (default: 50)
+
+**Response:** `200 OK`
+```json
+[
+  {
+    "id": "uuid-string",
+    "user_id": "uuid-string",
+    "weight": 80.5,
+    "previous_weight": 81.2,
+    "days_since_last_change": 7,
+    "recorded_at": "2025-01-20T10:00:00Z",
+    "notes": null
+  }
+]
+```
+
+---
+
+### Reset Workout Count (Client)
+**POST** `/api/metrics/workouts/reset`
+
+Allow a client to reset their workout count. Metrics are preserved for the Personal Trainer.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response:** `200 OK`
+```json
+{
+  "message": "Workout count reset successfully",
+  "workouts_archived": 25,
+  "reset_count": 2,
+  "metrics_preserved": true
+}
+```
+
+---
+
+### Get All Clients Metrics (Personal Trainer)
+**GET** `/api/metrics/clients`
+
+Get metrics for all clients of the current Personal Trainer.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response:** `200 OK` - Array of ClientMetricsResponse objects
+
+---
+
+### Get Client Metrics Detail (Personal Trainer)
+**GET** `/api/metrics/clients/{client_id}`
+
+Get detailed metrics for a specific client.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response:** `200 OK`
+```json
+{
+  "id": "uuid-string",
+  "client_id": "uuid-string",
+  "client_name": "João Silva",
+  "client_email": "joao@email.com",
+  "personal_trainer_id": "uuid-string",
+  "total_workouts_completed": 25,
+  "total_cardio_sessions": 10,
+  "weight_history": [
+    {
+      "id": "uuid-string",
+      "weight": 80.5,
+      "previous_weight": 81.2,
+      "days_since_last_change": 7,
+      "recorded_at": "2025-01-20T10:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+### Get Client Progress (Personal Trainer)
+**GET** `/api/metrics/clients/{client_id}/progress`
+
+Get detailed progress analysis for a specific client.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response:** `200 OK` - Progress object with client details
+
+---
+
+### Get Client Weight History (Personal Trainer)
+**GET** `/api/metrics/clients/{client_id}/weight-history`
+
+Get weight history for a specific client.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Query Parameters:**
+- `limit` (optional): Number of records to return (default: 50)
+
+**Response:** `200 OK` - Array of WeightHistoryResponse objects
+
+---
+
+### Get Dashboard Summary (Personal Trainer)
+**GET** `/api/metrics/dashboard-summary`
+
+Get summary statistics for Personal Trainer dashboard.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response:** `200 OK`
+```json
+{
+  "total_clients": 15,
+  "total_workouts_all_clients": 450,
+  "total_training_hours_all_clients": 675.5,
+  "average_client_consistency": 68.5,
+  "most_active_client": {
+    "name": "João Silva",
+    "workouts": 45
+  },
+  "most_consistent_client": {
+    "name": "Maria Santos",
+    "consistency": 85.5
+  }
+}
+```
+
+---
+
 ## Health Check
 
 ### API Health Check

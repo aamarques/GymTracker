@@ -36,6 +36,13 @@ const translations = {
         'auth.dont_have_account': "Don't have an account?",
         'auth.sign_in_here': 'Sign in here',
         'auth.register_here': 'Register here',
+        'auth.confirm_password': 'Confirm Password',
+        'auth.forgot_password': 'Forgot Password?',
+        'auth.email_or_username': 'Email or Username',
+        'auth.reset_instructions': 'Enter your email or username and we\'ll send you a password reset link.',
+        'auth.send_reset_link': 'Send Reset Link',
+        'auth.reset_password': 'Reset Password',
+        'auth.new_password': 'New Password',
 
         // Dashboard
         'dashboard.title': 'Dashboard',
@@ -77,6 +84,7 @@ const translations = {
         'muscle.biceps': 'Biceps',
         'muscle.triceps': 'Triceps',
         'muscle.legs': 'Legs',
+        'muscle.glutes': 'Glutes',
         'muscle.abs': 'Abs',
         'muscle.cardio': 'Cardio',
 
@@ -119,6 +127,11 @@ const translations = {
         'profile.update': 'Update Profile',
         'profile.desired_weight': 'Desired Weight (kg) - Optional',
         'profile.health_metrics': 'Health Metrics Analysis',
+        'profile.security': 'Security',
+        'profile.change_password': 'Change Password',
+        'profile.current_password': 'Current Password',
+        'profile.new_password': 'New Password',
+        'profile.confirm_new_password': 'Confirm New Password',
 
         // Health Metrics
         'health.current_weight': 'Current Weight',
@@ -196,6 +209,13 @@ const translations = {
         'auth.dont_have_account': 'Não tem uma conta?',
         'auth.sign_in_here': 'Entre aqui',
         'auth.register_here': 'Registre-se aqui',
+        'auth.confirm_password': 'Confirmar Senha',
+        'auth.forgot_password': 'Esqueceu a Senha?',
+        'auth.email_or_username': 'Email ou Usuário',
+        'auth.reset_instructions': 'Digite seu email ou usuário e enviaremos um link para redefinir sua senha.',
+        'auth.send_reset_link': 'Enviar Link de Recuperação',
+        'auth.reset_password': 'Redefinir Senha',
+        'auth.new_password': 'Nova Senha',
 
         // Dashboard
         'dashboard.title': 'Painel',
@@ -237,6 +257,7 @@ const translations = {
         'muscle.biceps': 'Bíceps',
         'muscle.triceps': 'Tríceps',
         'muscle.legs': 'Pernas',
+        'muscle.glutes': 'Glúteos',
         'muscle.abs': 'Abdômen',
         'muscle.cardio': 'Cardio',
 
@@ -279,6 +300,11 @@ const translations = {
         'profile.update': 'Atualizar Perfil',
         'profile.desired_weight': 'Peso Desejado (kg) - Opcional',
         'profile.health_metrics': 'Análise de Métricas de Saúde',
+        'profile.security': 'Segurança',
+        'profile.change_password': 'Alterar Senha',
+        'profile.current_password': 'Senha Atual',
+        'profile.new_password': 'Nova Senha',
+        'profile.confirm_new_password': 'Confirmar Nova Senha',
 
         // Health Metrics
         'health.current_weight': 'Peso Atual',

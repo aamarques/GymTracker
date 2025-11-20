@@ -52,7 +52,7 @@ async function apiRequest(endpoint, options = {}) {
     }
 }
 
-async function uploadFile(endpoint, formData) {
+async function uploadFile(endpoint, formData, method = 'POST') {
     const headers = {};
     if (authToken) {
         headers['Authorization'] = `Bearer ${authToken}`;
@@ -60,7 +60,7 @@ async function uploadFile(endpoint, formData) {
 
     try {
         const response = await fetch(`${API_BASE}${endpoint}`, {
-            method: 'POST',
+            method: method,
             headers,
             body: formData
         });
@@ -404,7 +404,7 @@ function displayExercises(exercises) {
             }
             <div class="exercise-content">
                 <h3>${exercise.name}</h3>
-                <span class="exercise-tag">${t('muscle.' + exercise.muscle_group)}</span>
+                <span class="exercise-tag">${t('muscle.' + exercise.muscle_group.toLowerCase())}</span>
                 ${exercise.equipment ? `<span class="exercise-tag">${exercise.equipment}</span>` : ''}
                 ${exercise.description ?
                     `<p class="exercise-description collapsed" data-id="${exercise.id}">${exercise.description}</p>
@@ -413,6 +413,7 @@ function displayExercises(exercises) {
                 ${isPersonalTrainer ? `
                     <div style="margin-top: 12px; display: flex; gap: 8px;">
                         <button onclick="showAssignExerciseModal('${exercise.id}')" class="btn btn-small btn-primary" data-i18n="exercises.assign_to_client">${t('exercises.assign_to_client')}</button>
+                        <button onclick="showEditExerciseModal('${exercise.id}')" class="btn btn-small" data-i18n="exercises.edit">${t('exercises.edit')}</button>
                         <button onclick="deleteExercise('${exercise.id}')" class="btn btn-small btn-danger" data-i18n="exercises.delete">${t('exercises.delete')}</button>
                     </div>
                 ` : ''}
@@ -437,13 +438,15 @@ function showAddExerciseModal() {
             <div class="form-group">
                 <label for="exercise-muscle" data-i18n="exercises.muscle_group">${t('exercises.muscle_group')}</label>
                 <select id="exercise-muscle" required>
-                    <option value="chest">${t('muscle.chest')}</option>
-                    <option value="back">${t('muscle.back')}</option>
-                    <option value="legs">${t('muscle.legs')}</option>
-                    <option value="shoulders">${t('muscle.shoulders')}</option>
-                    <option value="biceps">${t('muscle.biceps')}</option>
-                    <option value="triceps">${t('muscle.triceps')}</option>
-                    <option value="abs">${t('muscle.abs')}</option>
+                    <option value="Chest">${t('muscle.chest')}</option>
+                    <option value="Back">${t('muscle.back')}</option>
+                    <option value="Legs">${t('muscle.legs')}</option>
+                    <option value="Glutes">${t('muscle.glutes')}</option>
+                    <option value="Shoulders">${t('muscle.shoulders')}</option>
+                    <option value="Biceps">${t('muscle.biceps')}</option>
+                    <option value="Triceps">${t('muscle.triceps')}</option>
+                    <option value="Abs">${t('muscle.abs')}</option>
+                    <option value="Cardio">${t('muscle.cardio')}</option>
                 </select>
             </div>
             <div class="form-group">
@@ -486,6 +489,80 @@ function showAddExerciseModal() {
             console.error('Failed to add exercise:', error);
         }
     });
+}
+
+async function showEditExerciseModal(exerciseId) {
+    try {
+        // Fetch the exercise details
+        const exercise = await apiRequest(`/exercises/${exerciseId}`);
+
+        const modal = createModal(t('exercises.edit'), `
+            <form id="edit-exercise-form">
+                <div class="form-group">
+                    <label for="edit-exercise-name" data-i18n="exercises.name">${t('exercises.name')}</label>
+                    <input type="text" id="edit-exercise-name" value="${exercise.name}" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-exercise-muscle" data-i18n="exercises.muscle_group">${t('exercises.muscle_group')}</label>
+                    <select id="edit-exercise-muscle" required>
+                        <option value="Chest" ${exercise.muscle_group.toLowerCase() === 'chest' ? 'selected' : ''}>${t('muscle.chest')}</option>
+                        <option value="Back" ${exercise.muscle_group.toLowerCase() === 'back' ? 'selected' : ''}>${t('muscle.back')}</option>
+                        <option value="Legs" ${exercise.muscle_group.toLowerCase() === 'legs' ? 'selected' : ''}>${t('muscle.legs')}</option>
+                        <option value="Glutes" ${exercise.muscle_group.toLowerCase() === 'glutes' ? 'selected' : ''}>${t('muscle.glutes')}</option>
+                        <option value="Shoulders" ${exercise.muscle_group.toLowerCase() === 'shoulders' ? 'selected' : ''}>${t('muscle.shoulders')}</option>
+                        <option value="Biceps" ${exercise.muscle_group.toLowerCase() === 'biceps' ? 'selected' : ''}>${t('muscle.biceps')}</option>
+                        <option value="Triceps" ${exercise.muscle_group.toLowerCase() === 'triceps' ? 'selected' : ''}>${t('muscle.triceps')}</option>
+                        <option value="Abs" ${exercise.muscle_group.toLowerCase() === 'abs' ? 'selected' : ''}>${t('muscle.abs')}</option>
+                        <option value="Cardio" ${exercise.muscle_group.toLowerCase() === 'cardio' ? 'selected' : ''}>${t('muscle.cardio')}</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-exercise-equipment" data-i18n="exercises.equipment">${t('exercises.equipment')}</label>
+                    <input type="text" id="edit-exercise-equipment" value="${exercise.equipment || ''}" placeholder="e.g., Barbell, Dumbbells">
+                </div>
+                <div class="form-group">
+                    <label for="edit-exercise-description" data-i18n="exercises.description">${t('exercises.description')}</label>
+                    <textarea id="edit-exercise-description">${exercise.description || ''}</textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit-exercise-image" data-i18n="exercises.image">${t('exercises.image')}</label>
+                    ${exercise.image_path ? `<p style="font-size: 12px; color: #888; margin-bottom: 8px;">Current image: ${exercise.image_path.split('/').pop()}</p>` : ''}
+                    <input type="file" id="edit-exercise-image" accept=".png,.jpg,.jpeg,.gif">
+                    <p style="font-size: 12px; color: #888; margin-top: 4px;">Leave empty to keep current image</p>
+                </div>
+                <button type="submit" class="btn btn-primary" data-i18n="exercises.update">${t('exercises.update')}</button>
+            </form>
+        `);
+
+        document.getElementById('edit-exercise-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData();
+            formData.append('name', document.getElementById('edit-exercise-name').value);
+            formData.append('muscle_group', document.getElementById('edit-exercise-muscle').value);
+            formData.append('equipment', document.getElementById('edit-exercise-equipment').value);
+            formData.append('description', document.getElementById('edit-exercise-description').value);
+
+            const imageFile = document.getElementById('edit-exercise-image').files[0];
+            if (imageFile) {
+                formData.append('image', imageFile);
+            }
+
+            try {
+                await uploadFile(`/exercises/${exerciseId}`, formData, 'PUT');
+                closeModal();
+                showAlert(t('common.success'));
+                loadExercises();
+                loadDashboard();
+            } catch (error) {
+                console.error('Failed to update exercise:', error);
+                showAlert('Failed to update exercise: ' + error.message);
+            }
+        });
+    } catch (error) {
+        console.error('Failed to load exercise:', error);
+        showAlert('Failed to load exercise details');
+    }
 }
 
 async function deleteExercise(exerciseId) {
@@ -1462,12 +1539,16 @@ function showAddCardioModal() {
                 </select>
             </div>
             <div class="form-group">
+                <label for="cardio-date">Date & Time</label>
+                <input type="datetime-local" id="cardio-date" required>
+            </div>
+            <div class="form-group">
                 <label for="cardio-duration">Duration (minutes)</label>
                 <input type="number" id="cardio-duration" min="1" required>
             </div>
             <div class="form-group">
                 <label for="cardio-distance">Distance (km)</label>
-                <input type="number" id="cardio-distance" step="0.1">
+                <input type="number" id="cardio-distance" step="0.01" min="0">
             </div>
             <div class="form-group">
                 <label for="cardio-calories">Calories Burned</label>
@@ -1485,11 +1566,17 @@ function showAddCardioModal() {
         </form>
     `);
 
+    // Set default date to now
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById('cardio-date').value = now.toISOString().slice(0, 16);
+
     document.getElementById('add-cardio-form').addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const cardioData = {
             activity_type: document.getElementById('cardio-activity').value,
+            start_time: document.getElementById('cardio-date').value + ':00',
             duration: parseInt(document.getElementById('cardio-duration').value),
             distance: parseFloat(document.getElementById('cardio-distance').value) || null,
             calories_burned: parseInt(document.getElementById('cardio-calories').value) || null,
@@ -1742,11 +1829,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const role = document.getElementById('register-role').value;
         const isClient = role === 'client';
 
+        // Validate password confirmation
+        const password = document.getElementById('register-password').value;
+        const confirmPassword = document.getElementById('register-confirm-password').value;
+
+        if (password !== confirmPassword) {
+            showAlert('Passwords do not match', 'error');
+            return;
+        }
+
         const userData = {
             name: document.getElementById('register-name').value,
             username: document.getElementById('register-username').value,
             email: document.getElementById('register-email').value,
-            password: document.getElementById('register-password').value,
+            password: password,
+            confirm_password: confirmPassword,
             role: role,
             language: document.getElementById('register-language').value,
             phone: document.getElementById('register-phone').value || null,
@@ -1837,6 +1934,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // Profile events
     document.getElementById('profile-form').addEventListener('submit', updateProfile);
 
+    // Password Management Events
+    document.getElementById('forgot-password-link').addEventListener('click', (e) => {
+        e.preventDefault();
+        openForgotPasswordModal();
+    });
+
+    document.getElementById('forgot-password-form').addEventListener('submit', handleForgotPassword);
+    document.getElementById('reset-password-form').addEventListener('submit', handleResetPassword);
+    document.getElementById('change-password-form').addEventListener('submit', handleChangePassword);
+
+    // Check if there's a reset token in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const resetToken = urlParams.get('reset_token');
+    if (resetToken) {
+        document.getElementById('reset-token').value = resetToken;
+        openResetPasswordModal();
+    }
+
     // Check if user is logged in
     if (authToken) {
         loadUser().then(() => showApp()).catch(() => showAuth());
@@ -1844,3 +1959,180 @@ document.addEventListener('DOMContentLoaded', () => {
         showAuth();
     }
 });
+
+// Password Management Functions
+function openForgotPasswordModal() {
+    document.getElementById('forgot-password-modal').style.display = 'block';
+}
+
+function closeForgotPasswordModal() {
+    document.getElementById('forgot-password-modal').style.display = 'none';
+    document.getElementById('forgot-password-form').reset();
+}
+
+function openResetPasswordModal() {
+    document.getElementById('reset-password-modal').style.display = 'block';
+}
+
+function closeResetPasswordModal() {
+    document.getElementById('reset-password-modal').style.display = 'none';
+    document.getElementById('reset-password-form').reset();
+}
+
+function openChangePasswordModal() {
+    document.getElementById('change-password-modal').style.display = 'block';
+}
+
+function closeChangePasswordModal() {
+    document.getElementById('change-password-modal').style.display = 'none';
+    document.getElementById('change-password-form').reset();
+}
+
+async function handleForgotPassword(e) {
+    e.preventDefault();
+
+    const email = document.getElementById('forgot-email').value;
+
+    try {
+        const response = await fetch(`${API_BASE}/auth/forgot-password`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showAlert(data.message, 'success');
+            closeForgotPasswordModal();
+
+            // In development mode, log token to console for debugging
+            if (data.reset_token) {
+                console.log('🔐 Password Reset Token (DEV MODE):', data.reset_token);
+                console.log('📧 In production, this token is sent via email.');
+                console.log('🔗 Reset URL:', `${window.location.origin}?reset_token=${data.reset_token}`);
+            }
+        } else {
+            throw new Error(data.detail || 'Failed to request password reset');
+        }
+    } catch (error) {
+        showAlert(error.message, 'error');
+    }
+}
+
+async function handleResetPassword(e) {
+    e.preventDefault();
+
+    const token = document.getElementById('reset-token').value;
+    const newPassword = document.getElementById('reset-new-password').value;
+    const confirmPassword = document.getElementById('reset-confirm-password').value;
+
+    if (newPassword !== confirmPassword) {
+        showAlert('Passwords do not match', 'error');
+        return;
+    }
+
+    if (newPassword.length < 8) {
+        showAlert('Password must be at least 8 characters', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/auth/reset-password`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                token,
+                new_password: newPassword,
+                confirm_new_password: confirmPassword
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showAlert(data.message || 'Password reset successfully', 'success');
+            closeResetPasswordModal();
+
+            // Clear URL params
+            window.history.replaceState({}, document.title, window.location.pathname);
+
+            // Switch to login form
+            showAuth();
+        } else {
+            throw new Error(data.detail || 'Failed to reset password');
+        }
+    } catch (error) {
+        showAlert(error.message, 'error');
+    }
+}
+
+async function handleChangePassword(e) {
+    e.preventDefault();
+
+    const currentPassword = document.getElementById('current-password').value;
+    const newPassword = document.getElementById('new-password').value;
+    const confirmNewPassword = document.getElementById('confirm-new-password').value;
+
+    if (newPassword !== confirmNewPassword) {
+        showAlert('Passwords do not match', 'error');
+        return;
+    }
+
+    if (newPassword.length < 8) {
+        showAlert('Password must be at least 8 characters', 'error');
+        return;
+    }
+
+    if (newPassword === currentPassword) {
+        showAlert('New password must be different from current password', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/auth/change-password`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify({
+                current_password: currentPassword,
+                new_password: newPassword,
+                confirm_new_password: confirmNewPassword
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showAlert(data.message || 'Password changed successfully', 'success');
+            closeChangePasswordModal();
+        } else {
+            throw new Error(data.detail || 'Failed to change password');
+        }
+    } catch (error) {
+        showAlert(error.message, 'error');
+    }
+}
+
+// Close modals when clicking outside
+window.onclick = function(event) {
+    const forgotModal = document.getElementById('forgot-password-modal');
+    const resetModal = document.getElementById('reset-password-modal');
+    const changeModal = document.getElementById('change-password-modal');
+
+    if (event.target === forgotModal) {
+        closeForgotPasswordModal();
+    }
+    if (event.target === resetModal) {
+        closeResetPasswordModal();
+    }
+    if (event.target === changeModal) {
+        closeChangePasswordModal();
+    }
+};

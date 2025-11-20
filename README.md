@@ -6,13 +6,20 @@ A full-stack web application for Personal Trainers and Clients to manage workout
 
 ## Features
 
-### 🆕 Enhanced Role-Based System (V0.1.2)
+### 🆕 Client Metrics & Progress Tracking (V0.1.2)
 - **Personal Trainer Role:**
   - Create and manage exercise library
   - Add/remove clients from roster
   - Create custom workout plans for each client
   - Define exercises, sets, reps, weight, and rest time per workout
   - Mark workout plans as active for client's default
+  - **Track comprehensive client metrics:**
+    - Total workouts, cardio sessions, training hours, and unique training days
+    - Total sets and reps completed across all workouts
+    - Weight history with min/max tracking
+    - Consistency percentage and average workout duration
+    - View client progress trends and detailed analytics
+    - Dashboard summary with most active/consistent clients
   - Dedicated tabs: Dashboard, Exercises, My Clients, Profile
 - **Client Role:**
   - Self-registration with username and email
@@ -21,6 +28,11 @@ A full-stack web application for Personal Trainers and Clients to manage workout
   - Real-time workout timer and exercise logging
   - Track cardio sessions
   - Health metrics analysis with BMI and weight goal tracking
+  - **View personal metrics and progress:**
+    - Personal dashboard with workout statistics
+    - Weight history tracking with trend analysis
+    - Progress analysis with recent workout trends
+    - Option to reset workout count (metrics preserved for PT)
   - Dedicated tabs: Dashboard, Active Workout, Cardio, Profile
 
 ### 🌍 Internationalization (V0.1.0)
@@ -39,6 +51,10 @@ A full-stack web application for Personal Trainers and Clients to manage workout
 ### Exercise Library
 - Create and manage exercises with images
 - Upload exercise images (PNG, JPG, JPEG, GIF)
+- **Bulk import exercises from CSV files** (two formats supported)
+  - Portuguese format: Google Sheets with column-pair structure
+  - Standard format: CSV with name, muscle_group, equipment, description, image_path
+- Automatic muscle group mapping (Portuguese → English)
 - Filter by muscle group
 - Search functionality
 - Collapsible exercise descriptions
@@ -104,58 +120,52 @@ A full-stack web application for Personal Trainers and Clients to manage workout
 
 ## Quick Start
 
+> **📖 For detailed installation instructions, see [INSTALL.md](INSTALL.md)**
+
 ### Prerequisites
-- Docker/Podman installed (Podman recommended for WSL2)
-- Git (optional)
+- **Docker** or **Podman** installed
+- **2GB RAM** minimum
+- **2GB disk space**
 
-### Installation
+### Installation (Quick)
 
-1. **Clone or download the repository**
 ```bash
+# 1. Install Podman (or Docker)
+sudo apt install podman
+
+# 2. Clone repository
 git clone <repository-url>
-cd Gym
+cd GymTracker
+
+# 3. Start application
+./start-containers.sh
+
+# 4. Open browser
+# http://localhost:8080
 ```
 
-2. **Create environment file**
-```bash
-cp .env.example .env
-```
+**That's it!** The application is now running.
 
-3. **Configure environment variables** (optional)
-Edit `.env` file and update:
-- `SECRET_KEY` - Change to a secure random string for production
-- `POSTGRES_PASSWORD` - Set a strong database password
-- Database credentials if needed
+### Detailed Installation
 
-4. **Start the application**
+For complete installation instructions including:
+- System requirements
+- Platform-specific setup (Linux/Windows/macOS)
+- Configuration options
+- Troubleshooting
+- Production deployment
 
-**Option A: Using Podman (Recommended for WSL2)**
-```bash
-bash start-containers.sh
-```
+**See: [Complete Installation Guide (INSTALL.md)](INSTALL.md)**
 
-**Option B: Using Docker Compose**
-```bash
-export DOCKER_BUILDKIT=0
-export COMPOSE_DOCKER_CLI_BUILD=0
-docker-compose up -d
-```
+### Quick Access
 
-5. **Access the application**
-Open your browser and navigate to:
-
-**Using Podman (default WSL2 configuration):**
+**Using Podman (default):**
 - **Application**: http://localhost:8080
 - **API Documentation**: http://localhost:8080/docs
-- **Backend API**: http://localhost:8000
-- **API Health Check**: http://localhost:8000/health
 
-**Using Docker Compose (with privileged port access):**
+**Using Docker Compose:**
 - **Application**: http://localhost
 - **API Documentation**: http://localhost/docs
-- **Backend API**: http://localhost:8000
-
-> **Note**: Podman uses port 8080 to avoid privileged port binding issues on WSL2. See [WSL2 + Podman Setup Guide](docs/WSL2_PODMAN_SETUP.md) for details.
 
 ### First Time Setup
 
@@ -166,6 +176,18 @@ Open your browser and navigate to:
    - Password must be at least 8 characters
 
 2. **Add exercises to the library**
+
+   **Option A: Bulk Import (Recommended)**
+   ```bash
+   # For Portuguese CSV (Google Sheets format with column pairs)
+   ./import-exercises-pt.sh Imports/exercicios.csv
+
+   # For standard CSV format
+   ./import-exercises.sh exercises_template.csv
+   ```
+   See **[Exercise Import Guide](IMPORT_EXERCISES_GUIDE.md)** for detailed instructions.
+
+   **Option B: Manual Entry**
    - Go to "Exercises" tab
    - Click "Add Exercise"
    - Upload exercise images for better visualization
@@ -250,6 +272,17 @@ Gym/
 - `GET /api/cardio/{id}` - Get cardio session details
 - `PUT /api/cardio/{id}` - Update cardio session
 - `DELETE /api/cardio/{id}` - Delete cardio session
+
+#### Metrics & Progress
+- `GET /api/metrics/my-metrics` - Get current user's metrics (Client)
+- `GET /api/metrics/my-progress` - Get detailed progress analysis (Client)
+- `GET /api/metrics/weight-history` - Get weight history (Client)
+- `POST /api/metrics/workouts/reset` - Reset workout count (Client)
+- `GET /api/metrics/clients` - Get all clients' metrics (Personal Trainer)
+- `GET /api/metrics/clients/{id}` - Get specific client metrics (Personal Trainer)
+- `GET /api/metrics/clients/{id}/progress` - Get client progress analysis (Personal Trainer)
+- `GET /api/metrics/clients/{id}/weight-history` - Get client weight history (Personal Trainer)
+- `GET /api/metrics/dashboard-summary` - Get PT dashboard summary (Personal Trainer)
 
 ### Running Tests
 
@@ -424,6 +457,8 @@ podman stop gym_nginx gym_backend gym_postgres  # Stop all
 
 ### Quick Links
 - **[Quick Start Guide](docs/QUICK_START.md)** - Get running in 5 minutes
+- **[Exercise Import Guide](IMPORT_EXERCISES_GUIDE.md)** - Import exercises from CSV files
+- **[Admin Guide](ADMIN_GUIDE.md)** - Admin scripts and user management
 - **[WSL2 + Podman Setup](docs/WSL2_PODMAN_SETUP.md)** - WSL2/Podman configuration guide
 - **[API Documentation](docs/API.md)** - Complete API reference
 - **[Development Guide](docs/DEVELOPMENT.md)** - Developer setup and workflow
@@ -471,6 +506,17 @@ For issues and questions:
 - ✅ Create workout plans directly for specific clients
 - ✅ View client details (BMI, weight, height)
 - ✅ Workout plans assigned to clients (not PTs)
+
+**📊 Comprehensive Metrics & Progress Tracking:**
+- ✅ Automatic tracking of all workout and cardio activities
+- ✅ Cumulative metrics that persist across workout resets
+- ✅ Weight history tracking with min/max values
+- ✅ Consistency percentage and training day tracking
+- ✅ Total sets and reps completed tracking
+- ✅ Personal Trainer dashboard with client summaries
+- ✅ Detailed progress analysis with 30-day trends
+- ✅ Client ability to reset workout count (metrics preserved for PT)
+- ✅ Weight change tracking with time intervals
 
 **🏋️ Workout Management:**
 - ✅ Workout plan creation with active/inactive toggle

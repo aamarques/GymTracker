@@ -20,7 +20,14 @@
       "Bash(bash:*)",
       "Bash(python3:*)",
       "Read(//home/aamarques/.config/containers/**)",
-      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkMTMzNWNkNy1lNDlmLTRlZWUtYjdkMS00MGRiYWU3ZmE5MjciLCJleHAiOjE3NjA4NjU2Mzh9.O1bzUJCWu8rNcIpVKr3QnHe7Kp3AL3NFQVMclnfArvY\")"
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkMTMzNWNkNy1lNDlmLTRlZWUtYjdkMS00MGRiYWU3ZmE5MjciLCJleHAiOjE3NjA4NjU2Mzh9.O1bzUJCWu8rNcIpVKr3QnHe7Kp3AL3NFQVMclnfArvY\")",
+      "Bash(docker.io/library/nginx:alpine)",
+      "Bash(podman-compose restart gym_backend)",
+      "Bash(git show-ref:*)",
+      "Bash(git tag:*)",
+      "Bash(./import-exercises-pt.sh)",
+      "Bash(./start-containers.sh:*)",
+      "Bash(./import-exercises-pt.sh:*)"
     ],
     "deny": [],
     "ask": []

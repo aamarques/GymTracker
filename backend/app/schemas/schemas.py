@@ -21,11 +21,18 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str = Field(min_length=8)
+    confirm_password: str = Field(min_length=8)
 
     @validator('password')
     def validate_password(cls, v):
         if len(v) < 8:
             raise ValueError('Password must be at least 8 characters long')
+        return v
+
+    @validator('confirm_password')
+    def passwords_match(cls, v, values):
+        if 'password' in values and v != values['password']:
+            raise ValueError('Passwords do not match')
         return v
 
     @validator('language')
@@ -363,3 +370,53 @@ class ClientMetricsDetailedResponse(ClientMetricsResponse):
     client_name: Optional[str] = None
     client_email: Optional[str] = None
     weight_history: List[WeightHistoryResponse] = []
+
+
+# Password Management Schemas
+class ChangePasswordRequest(BaseModel):
+    """Request to change user password"""
+    current_password: str
+    new_password: str = Field(min_length=8)
+    confirm_new_password: str = Field(min_length=8)
+
+    @validator('new_password')
+    def validate_new_password(cls, v):
+        if len(v) < 8:
+            raise ValueError('Password must be at least 8 characters long')
+        return v
+
+    @validator('confirm_new_password')
+    def passwords_match(cls, v, values):
+        if 'new_password' in values and v != values['new_password']:
+            raise ValueError('Passwords do not match')
+        return v
+
+
+class PasswordResetRequest(BaseModel):
+    """Request to reset password (forgot password)"""
+    email: str  # Can be email or username
+
+
+class PasswordResetConfirm(BaseModel):
+    """Confirm password reset with token"""
+    token: str
+    new_password: str = Field(min_length=8)
+    confirm_new_password: str = Field(min_length=8)
+
+    @validator('new_password')
+    def validate_new_password(cls, v):
+        if len(v) < 8:
+            raise ValueError('Password must be at least 8 characters long')
+        return v
+
+    @validator('confirm_new_password')
+    def passwords_match(cls, v, values):
+        if 'new_password' in values and v != values['new_password']:
+            raise ValueError('Passwords do not match')
+        return v
+
+
+class PasswordResetResponse(BaseModel):
+    """Response for password reset request"""
+    message: str
+    reset_token: Optional[str] = None  # Only in dev mode, normally sent via email

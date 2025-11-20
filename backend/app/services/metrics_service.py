@@ -57,6 +57,8 @@ def update_metrics_after_workout(db: Session, workout_session_id: str) -> None:
 
     # Update workout counts
     metrics.total_workouts_completed += 1
+    if metrics.total_training_hours is None:
+        metrics.total_training_hours = 0.0
     metrics.total_training_hours += duration_hours
     metrics.last_activity_date = session.end_time
 
@@ -66,6 +68,10 @@ def update_metrics_after_workout(db: Session, workout_session_id: str) -> None:
     # Count sets and reps from exercise logs
     exercise_logs = db.query(ExerciseLog).filter(ExerciseLog.session_id == workout_session_id).all()
     for log in exercise_logs:
+        if metrics.total_sets_completed is None:
+            metrics.total_sets_completed = 0
+        if metrics.total_reps_completed is None:
+            metrics.total_reps_completed = 0
         metrics.total_sets_completed += log.sets_completed
         metrics.total_reps_completed += log.reps_completed
 
@@ -98,6 +104,8 @@ def update_metrics_after_cardio(db: Session, cardio_session_id: str) -> None:
 
     # Add cardio duration to total training hours
     cardio_hours = cardio.duration / 60.0
+    if metrics.total_training_hours is None:
+        metrics.total_training_hours = 0.0
     metrics.total_training_hours += cardio_hours
 
     # Update unique training days
@@ -181,6 +189,8 @@ def track_weight_change(db: Session, user_id: str, new_weight: float, notes: Opt
     # Update client metrics
     metrics = get_or_create_client_metrics(db, user_id)
     metrics.current_weight = new_weight
+    if metrics.total_weight_changes is None:
+        metrics.total_weight_changes = 0
     metrics.total_weight_changes += 1
 
     # Update lowest/highest weight
@@ -219,6 +229,8 @@ def reset_client_workouts(db: Session, client_id: str) -> dict:
     ).count()
 
     # Update reset tracking in metrics (PT can still see this)
+    if metrics.times_workouts_reset is None:
+        metrics.times_workouts_reset = 0
     metrics.times_workouts_reset += 1
     metrics.last_reset_date = datetime.now()
     metrics.workouts_before_last_reset = current_workouts
