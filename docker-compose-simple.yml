@@ -1,0 +1,58 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: gym_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-gymuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gympass123}
+      POSTGRES_DB: ${POSTGRES_DB:-gymtracker}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gymuser}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - gym_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: gym_backend
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://gymuser:gympass123@db:5432/gymtracker}
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-this-in-production}
+      ALGORITHM: ${ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+    volumes:
+      - ./backend:/app
+      - ./data/uploads:/app/uploads
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - gym_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: gym_nginx
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./data/uploads:/usr/share/nginx/html/uploads:ro
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - gym_network
+
+networks:
+  gym_network:
+    driver: bridge
