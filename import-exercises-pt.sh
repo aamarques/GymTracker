@@ -25,7 +25,7 @@ fi
 
 # Run import script inside backend container
 if [ -n "$USER_ID" ]; then
-    podman exec gym_backend python import_exercises_pt.py "/app/$CSV_FILE" --user-id "$USER_ID"
+    docker exec gym_backend python import_exercises_pt.py "/app/$CSV_FILE" --user-id "$USER_ID"
 else
-    podman exec gym_backend python import_exercises_pt.py "/app/$CSV_FILE"
+    docker exec gym_backend python import_exercises_pt.py "/app/$CSV_FILE"
 fi

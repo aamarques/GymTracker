@@ -1,7 +1,7 @@
 #!/bin/bash
 # Import exercises from CSV - Wrapper script
 
-if ! podman ps | grep -q gym_backend; then
+if ! docker ps | grep -q gym_backend; then
     echo "❌ Error: gym_backend container is not running!"
     exit 1
 fi
@@ -30,11 +30,11 @@ CSV_FILENAME=$(basename "$CSV_FILE")
 
 # Copy CSV to container
 echo "📋 Copying CSV to container..."
-podman cp "$CSV_FILE" gym_backend:/tmp/"$CSV_FILENAME"
+docker cp "$CSV_FILE" gym_backend:/tmp/"$CSV_FILENAME"
 
 # Run import script
 echo ""
-podman exec -it gym_backend python import_exercises.py /tmp/"$CSV_FILENAME" "$@"
+docker exec -it gym_backend python import_exercises.py /tmp/"$CSV_FILENAME" "$@"
 
 # Cleanup
-podman exec gym_backend rm /tmp/"$CSV_FILENAME"
+docker exec gym_backend rm /tmp/"$CSV_FILENAME"

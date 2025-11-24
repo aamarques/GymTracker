@@ -457,6 +457,8 @@ podman stop gym_nginx gym_backend gym_postgres  # Stop all
 
 ### Quick Links
 - **[Quick Start Guide](docs/QUICK_START.md)** - Get running in 5 minutes
+- **[Installation Guide](INSTALL.md)** - Complete installation instructions
+- **[Migration Guide](MIGRATION_GUIDE.md)** - Migrate to new server
 - **[Exercise Import Guide](IMPORT_EXERCISES_GUIDE.md)** - Import exercises from CSV files
 - **[Admin Guide](ADMIN_GUIDE.md)** - Admin scripts and user management
 - **[WSL2 + Podman Setup](docs/WSL2_PODMAN_SETUP.md)** - WSL2/Podman configuration guide
