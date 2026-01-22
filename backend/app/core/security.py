@@ -77,3 +77,41 @@ def validate_password_strength(password: str) -> bool:
     if len(password) < 8:
         return False
     return True
+
+
+def check_login_attempts(db, identifier: str) -> tuple[bool, int]:
+    """
+    Check if user has exceeded maximum login attempts
+    Returns: (is_locked, attempts_remaining)
+    """
+    from app.models.models import LoginAttempt
+    from datetime import datetime, timedelta, timezone
+
+    lockout_window = datetime.now(timezone.utc) - timedelta(minutes=settings.LOGIN_LOCKOUT_MINUTES)
+
+    # Count failed attempts within lockout window
+    failed_attempts = db.query(LoginAttempt).filter(
+        LoginAttempt.identifier == identifier,
+        LoginAttempt.success == False,
+        LoginAttempt.attempted_at >= lockout_window
+    ).count()
+
+    is_locked = failed_attempts >= settings.MAX_LOGIN_ATTEMPTS
+    attempts_remaining = max(0, settings.MAX_LOGIN_ATTEMPTS - failed_attempts)
+
+    return is_locked, attempts_remaining
+
+
+def record_login_attempt(db, identifier: str, success: bool, user_id: str = None, ip_address: str = None) -> None:
+    """Record a login attempt for security tracking"""
+    from app.models.models import LoginAttempt
+
+    attempt = LoginAttempt(
+        identifier=identifier,
+        success=success,
+        user_id=user_id,
+        ip_address=ip_address
+    )
+
+    db.add(attempt)
+    db.commit()

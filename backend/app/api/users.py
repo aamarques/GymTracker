@@ -321,14 +321,19 @@ async def get_health_metrics(
 
 @router.get("/clients", response_model=List[ClientListResponse])
 async def get_my_clients(
+    skip: int = 0,
+    limit: int = 100,
     current_user: User = Depends(require_personal_trainer),
     db: Session = Depends(get_db)
 ):
-    """Get all clients assigned to the current Personal Trainer"""
+    """
+    Get all clients assigned to the current Personal Trainer
+    Supports pagination via skip and limit parameters
+    """
     clients = db.query(User).filter(
         User.personal_trainer_id == current_user.id,
         User.role == UserRole.CLIENT
-    ).all()
+    ).offset(skip).limit(limit).all()
 
     return clients
 
@@ -361,14 +366,19 @@ async def get_client_detail(
 
 @router.get("/available-clients", response_model=List[ClientListResponse])
 async def get_available_clients(
+    skip: int = 0,
+    limit: int = 100,
     current_user: User = Depends(require_personal_trainer),
     db: Session = Depends(get_db)
 ):
-    """Get all clients without a personal trainer"""
+    """
+    Get all clients without a personal trainer
+    Supports pagination via skip and limit parameters
+    """
     available_clients = db.query(User).filter(
         User.role == UserRole.CLIENT,
         User.personal_trainer_id.is_(None)
-    ).all()
+    ).offset(skip).limit(limit).all()
 
     return available_clients
 

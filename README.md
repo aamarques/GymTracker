@@ -120,52 +120,58 @@ A full-stack web application for Personal Trainers and Clients to manage workout
 
 ## Quick Start
 
-> **📖 For detailed installation instructions, see [INSTALL.md](INSTALL.md)**
-
 ### Prerequisites
-- **Docker** or **Podman** installed
-- **2GB RAM** minimum
-- **2GB disk space**
+- Docker/Podman installed (Podman recommended for WSL2)
+- Git (optional)
 
-### Installation (Quick)
+### Installation
 
+1. **Clone or download the repository**
 ```bash
-# 1. Install Podman (or Docker)
-sudo apt install podman
-
-# 2. Clone repository
 git clone <repository-url>
-cd GymTracker
-
-# 3. Start application
-./start-containers.sh
-
-# 4. Open browser
-# http://localhost:8080
+cd Gym
 ```
 
-**That's it!** The application is now running.
+2. **Create environment file**
+```bash
+cp .env.example .env
+```
 
-### Detailed Installation
+3. **Configure environment variables** (optional)
+Edit `.env` file and update:
+- `SECRET_KEY` - Change to a secure random string for production
+- `POSTGRES_PASSWORD` - Set a strong database password
+- Database credentials if needed
 
-For complete installation instructions including:
-- System requirements
-- Platform-specific setup (Linux/Windows/macOS)
-- Configuration options
-- Troubleshooting
-- Production deployment
+4. **Start the application**
 
-**See: [Complete Installation Guide (INSTALL.md)](INSTALL.md)**
+**Option A: Using Podman (Recommended for WSL2)**
+```bash
+bash start-containers.sh
+```
 
-### Quick Access
+**Option B: Using Docker Compose**
+```bash
+export DOCKER_BUILDKIT=0
+export COMPOSE_DOCKER_CLI_BUILD=0
+docker-compose up -d
+```
 
-**Using Podman (default):**
+5. **Access the application**
+Open your browser and navigate to:
+
+**Using Podman (default WSL2 configuration):**
 - **Application**: http://localhost:8080
 - **API Documentation**: http://localhost:8080/docs
+- **Backend API**: http://localhost:8000
+- **API Health Check**: http://localhost:8000/health
 
-**Using Docker Compose:**
+**Using Docker Compose (with privileged port access):**
 - **Application**: http://localhost
 - **API Documentation**: http://localhost/docs
+- **Backend API**: http://localhost:8000
+
+> **Note**: Podman uses port 8080 to avoid privileged port binding issues on WSL2. See [WSL2 + Podman Setup Guide](docs/WSL2_PODMAN_SETUP.md) for details.
 
 ### First Time Setup
 
@@ -457,8 +463,6 @@ podman stop gym_nginx gym_backend gym_postgres  # Stop all
 
 ### Quick Links
 - **[Quick Start Guide](docs/QUICK_START.md)** - Get running in 5 minutes
-- **[Installation Guide](INSTALL.md)** - Complete installation instructions
-- **[Migration Guide](MIGRATION_GUIDE.md)** - Migrate to new server
 - **[Exercise Import Guide](IMPORT_EXERCISES_GUIDE.md)** - Import exercises from CSV files
 - **[Admin Guide](ADMIN_GUIDE.md)** - Admin scripts and user management
 - **[WSL2 + Podman Setup](docs/WSL2_PODMAN_SETUP.md)** - WSL2/Podman configuration guide

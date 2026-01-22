@@ -28,7 +28,7 @@
       "Bash(./import-exercises-pt.sh)",
       "Bash(./start-containers.sh:*)",
       "Bash(./import-exercises-pt.sh:*)",
-      "Bash(cat:*)"
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
