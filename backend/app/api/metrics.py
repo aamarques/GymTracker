@@ -94,18 +94,15 @@ async def get_my_weight_history(
 
 @router.get("/clients", response_model=List[ClientMetricsResponse])
 async def get_all_clients_metrics(
-    skip: int = 0,
-    limit: int = 100,
     current_user: User = Depends(require_personal_trainer),
     db: Session = Depends(get_db)
 ):
     """
     Get metrics for all clients of the current Personal Trainer
-    Supports pagination via skip and limit parameters
     """
     metrics = db.query(ClientMetrics).filter(
         ClientMetrics.personal_trainer_id == current_user.id
-    ).offset(skip).limit(limit).all()
+    ).all()
 
     return metrics
 
