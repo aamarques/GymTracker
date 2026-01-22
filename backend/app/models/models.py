@@ -250,3 +250,20 @@ class PasswordResetToken(Base):
 
     # Relationships
     user = relationship("User", foreign_keys=[user_id])
+
+
+class LoginAttempt(Base):
+    """
+    Tracks failed login attempts for rate limiting and security monitoring
+    """
+    __tablename__ = "login_attempts"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    identifier = Column(String, nullable=False, index=True)  # Email or username attempted
+    ip_address = Column(String, nullable=True)
+    success = Column(Boolean, default=False)
+    attempted_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=True)  # Null if user not found
+
+    # Relationships
+    user = relationship("User", foreign_keys=[user_id])

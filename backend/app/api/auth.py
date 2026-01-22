@@ -19,7 +19,9 @@ from app.core.security import (
     verify_password,
     create_access_token,
     validate_password_strength,
-    get_current_user
+    get_current_user,
+    check_login_attempts,
+    record_login_attempt
 )
 from app.core.config import settings
 from datetime import datetime
@@ -99,17 +101,40 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
 @router.post("/login", response_model=Token)
 async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     """Login user and return JWT token"""
+    # Check if account is locked due to failed attempts
+    is_locked, attempts_remaining = check_login_attempts(db, login_data.email)
+
+    if is_locked:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Account temporarily locked due to too many failed login attempts. Please try again in {settings.LOGIN_LOCKOUT_MINUTES} minutes."
+        )
+
     # Check if login identifier is email or username
     user = db.query(User).filter(
         (User.email == login_data.email) | (User.username == login_data.email)
     ).first()
 
     if not user or not verify_password(login_data.password, user.hashed_password):
+        # Record failed attempt
+        record_login_attempt(db, login_data.email, success=False, user_id=user.id if user else None)
+
+        # Calculate remaining attempts for better UX
+        new_attempts_remaining = attempts_remaining - 1
+        detail_msg = "Incorrect username/email or password"
+        if new_attempts_remaining > 0:
+            detail_msg += f". {new_attempts_remaining} attempts remaining."
+        else:
+            detail_msg += f". Account locked for {settings.LOGIN_LOCKOUT_MINUTES} minutes."
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username/email or password",
+            detail=detail_msg,
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    # Record successful login
+    record_login_attempt(db, login_data.email, success=True, user_id=user.id)
 
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
@@ -125,17 +150,40 @@ async def login_oauth(
     db: Session = Depends(get_db)
 ):
     """OAuth2 compatible token endpoint"""
+    # Check if account is locked due to failed attempts
+    is_locked, attempts_remaining = check_login_attempts(db, form_data.username)
+
+    if is_locked:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Account temporarily locked due to too many failed login attempts. Please try again in {settings.LOGIN_LOCKOUT_MINUTES} minutes."
+        )
+
     # Check if login identifier is email or username
     user = db.query(User).filter(
         (User.email == form_data.username) | (User.username == form_data.username)
     ).first()
 
     if not user or not verify_password(form_data.password, user.hashed_password):
+        # Record failed attempt
+        record_login_attempt(db, form_data.username, success=False, user_id=user.id if user else None)
+
+        # Calculate remaining attempts for better UX
+        new_attempts_remaining = attempts_remaining - 1
+        detail_msg = "Incorrect username/email or password"
+        if new_attempts_remaining > 0:
+            detail_msg += f". {new_attempts_remaining} attempts remaining."
+        else:
+            detail_msg += f". Account locked for {settings.LOGIN_LOCKOUT_MINUTES} minutes."
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username/email or password",
+            detail=detail_msg,
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    # Record successful login
+    record_login_attempt(db, form_data.username, success=True, user_id=user.id)
 
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
