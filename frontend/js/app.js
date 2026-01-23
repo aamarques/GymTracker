@@ -117,6 +117,9 @@ function logout() {
     authToken = null;
     currentUser = null;
     localStorage.removeItem('authToken');
+    // Clear password field on logout
+    document.getElementById('login-password').value = '';
+    document.getElementById('login-email').value = '';
     showAuth();
 }
 
