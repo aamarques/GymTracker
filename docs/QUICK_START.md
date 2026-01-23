@@ -1,245 +1,120 @@
-# Gym Workout Tracker - Quick Start Guide
+# Quick Start Guide
 
-Get up and running in 5 minutes!
-
-## For WSL2 Users (Recommended)
-
-### 1. Start the Application
+## Launch the Application
 
 ```bash
-cd /mnt/c/Users/Alexandre/WSL_HOME/Gym
-bash start-containers.sh
-```
-
-### 2. Access the Application
-
-Open your browser:
-- **Main App**: http://localhost:8080
-- **API Docs**: http://localhost:8080/docs
-- **Health Check**: http://localhost:8000/health
-
-### 3. Register Your Account
-
-1. Go to http://localhost:8080
-2. Click "Register"
-3. Fill in your details:
-   - **Role**: Choose Personal Trainer or Client
-   - **Username**: Unique username for login
-   - **Email**: Your email address
-   - **Password**: Min 8 characters
-   - **Name**: Your full name
-   - **Language**: English or Portuguese
-   - **Date of Birth**: (format: YYYY-MM-DDTHH:MM:SS)
-   - **Weight** (kg) - for Clients only
-   - **Height** (cm) - for Clients only
-   - **Desired Weight** (optional) - for Clients only
-4. Click "Register"
-
-**Note**:
-- Personal Trainers can manage exercises, clients, and workout plans
-- Clients can track workouts, view metrics, and follow assigned plans
-
-### 4. Start Using the App
-
-#### For Personal Trainers:
-
-**Add Exercises to Library:**
-1. Go to "Exercises" tab
-2. Click "Add Exercise"
-3. Fill in exercise details
-4. Upload an image (optional)
-
-**Add Clients:**
-1. Go to "My Clients" tab
-2. Click "Add Client"
-3. Enter client's email or username
-4. View client roster and metrics
-
-**Create Workout Plans for Clients:**
-1. Go to "My Clients" tab
-2. Select a client
-3. Click "Create Workout"
-4. Add exercises and configure sets/reps
-5. Mark as "Active Plan" for client's default
-
-**View Client Progress:**
-1. Go to "My Clients" tab
-2. Click on a client to view detailed metrics
-3. See weight history, consistency, and workout trends
-
-#### For Clients:
-
-**View Assigned Workout:**
-1. Go to "Active Workout" tab
-2. See your active workout plan from your trainer
-3. Click "Start Workout"
-4. Log exercises as you complete them
-5. Click "End Workout" when done
-
-**Track Cardio:**
-1. Go to "Cardio" tab
-2. Click "Log Cardio"
-3. Enter activity details (running, cycling, etc.)
-4. Save
-
-**View Your Progress:**
-1. Go to "Dashboard" tab
-2. See your workout statistics and trends
-3. Check your weight history
-4. View consistency and training days
-
----
-
-## For Docker Users
-
-### 1. Start with Docker Compose
-
-```bash
-cd Gym
-export DOCKER_BUILDKIT=0
-export COMPOSE_DOCKER_CLI_BUILD=0
+# Start all services
 docker-compose up -d
-```
 
-### 2. Access the Application
+# View logs
+docker-compose logs -f
 
-- **Main App**: http://localhost
-- **API Docs**: http://localhost/docs
-
-### 3. Follow steps 3-4 from above
-
----
-
-## Container Management
-
-### Check Status
-
-```bash
-# Podman
-podman ps
-
-# Docker
-docker-compose ps
-```
-
-### View Logs
-
-```bash
-# Podman
-podman logs -f gym_backend
-podman logs -f gym_postgres
-
-# Docker
-docker-compose logs -f backend
-docker-compose logs -f db
-```
-
-### Stop Containers
-
-```bash
-# Podman
-podman stop gym_nginx gym_backend gym_postgres
-
-# Docker
+# Stop services
 docker-compose down
 ```
 
-### Restart Containers
+## Access Points
 
+- **Main App**: http://localhost
+- **API Docs**: http://localhost/docs
+- **Health Check**: http://localhost/health
+
+## First Time Setup
+
+1. Open http://localhost
+2. Click "Register" and create an account
+3. Login with your credentials
+4. You're ready to go!
+
+## Common Tasks
+
+### Add an Exercise
+1. Go to "Exercises" tab
+2. Click "Add Exercise"
+3. Upload an image (optional)
+4. Fill in details
+5. Click "Add Exercise"
+
+### Create a Workout Plan
+1. Go to "Workout Plans" tab
+2. Click "Create Plan"
+3. Name your plan
+4. (Add exercises via API or future UI enhancement)
+5. Click "Create Plan"
+
+### Start a Workout
+1. Go to "Active Workout" tab
+2. Click "Start Workout"
+3. Select exercise and log sets/reps/weight
+4. Click "Log Exercise" after each set
+5. Click "End Workout" when done
+
+### Log Cardio
+1. Go to "Cardio" tab
+2. Click "Log Cardio"
+3. Select activity type
+4. Enter duration, distance, calories
+5. Click "Log Session"
+
+### Update Profile
+1. Go to "Profile" tab
+2. Update your weight, height, phone
+3. Click "Update Profile"
+4. BMI recalculates automatically
+
+## Troubleshooting
+
+**Can't access the app?**
+- Make sure Docker is running
+- Check if ports 80 and 5432 are available
+- Run `docker-compose ps` to see container status
+
+**Backend errors?**
+- Check logs: `docker-compose logs backend`
+- Restart: `docker-compose restart backend`
+
+**Database issues?**
+- Check logs: `docker-compose logs db`
+- Restart: `docker-compose restart db`
+
+**Need to reset everything?**
 ```bash
-# Podman
-podman restart gym_backend
-
-# Docker
-docker-compose restart backend
+docker-compose down -v
+docker-compose up -d
 ```
 
----
+## Development
 
-## Common Issues
+**Hot reload is enabled!**
+- Backend: Edit files in `backend/app/`, changes apply automatically
+- Frontend: Edit files in `frontend/`, refresh browser
 
-### "Cannot register"
-- Check backend logs: `podman logs gym_backend`
-- Verify database is running: `podman ps | grep postgres`
-- Check API health: `curl http://localhost:8000/health`
-
-### "nftables error"
-- Use the Podman script: `bash start-containers.sh`
-- Or disable BuildKit for Docker (see above)
-
-### "Port already in use"
-- Stop existing containers first
-- Check what's using the port: `sudo lsof -i :8080`
-
-### "Database connection failed"
-- Restart PostgreSQL: `podman restart gym_postgres`
-- Check logs: `podman logs gym_postgres`
-
----
-
-## Quick Commands Cheat Sheet
-
+**Access containers:**
 ```bash
-# Start everything
-bash start-containers.sh
+# Backend
+docker-compose exec backend bash
 
-# Stop everything
-podman stop gym_nginx gym_backend gym_postgres
-podman rm gym_nginx gym_backend gym_postgres
-
-# View all logs
-podman logs gym_backend
-podman logs gym_postgres
-podman logs gym_nginx
-
-# Access database
-podman exec -it gym_postgres psql -U gymuser -d gymtracker
-
-# Rebuild backend after code changes
-podman stop gym_backend && podman rm gym_backend
-podman build -t localhost/gym_backend:latest backend/
-bash start-containers.sh
-
-# Check container stats
-podman stats
-
-# List volumes
-podman volume ls
+# Database
+docker-compose exec db psql -U gymuser -d gymtracker
 ```
 
----
+## Production Deployment
 
-## Next Steps
+1. Update `.env` with secure values:
+   ```bash
+   SECRET_KEY=<generate with: openssl rand -hex 32>
+   POSTGRES_PASSWORD=<strong password>
+   DEBUG=False
+   ```
 
-Once you're up and running:
+2. Configure HTTPS in `nginx/nginx.conf`
 
-1. **Read the full documentation**:
-   - [README.md](../README.md) - Complete overview
-   - [API.md](API.md) - API documentation
-   - [DEVELOPMENT.md](DEVELOPMENT.md) - Development guide
-   - [DEPLOYMENT.md](DEPLOYMENT.md) - Production deployment
+3. Set up backups for PostgreSQL
 
-2. **Explore the API**:
-   - Visit http://localhost:8080/docs
-   - Try out the interactive API documentation
+4. Deploy!
 
-3. **Customize your experience**:
-   - Update your profile with accurate metrics
-   - Create your exercise library
-   - Build workout plans that match your goals
+## Need Help?
 
-4. **Track your progress**:
-   - Log workouts regularly
-   - Monitor your dashboard statistics
-   - Track weight and BMI changes over time
-
----
-
-## Getting Help
-
-- Check the [Troubleshooting section](../README.md#troubleshooting) in README
-- Review [Common Issues](#common-issues) above
-- Check container logs for error details
-- Ensure all services are running: `podman ps`
-
-Happy training!
+- Check README.md for detailed documentation
+- View API docs at http://localhost/docs
+- Check PROJECT_SUMMARY.md for technical details

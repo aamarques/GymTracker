@@ -120,7 +120,7 @@ A full-stack web application for Personal Trainers and Clients to manage workout
 
 ## Quick Start
 
-> **📖 For detailed installation instructions, see [INSTALL.md](INSTALL.md)**
+> **📖 For detailed installation instructions, see [INSTALL.md](docs/INSTALL.md)**
 
 ### Prerequisites
 - **Docker** or **Podman** installed
@@ -138,7 +138,7 @@ git clone <repository-url>
 cd GymTracker
 
 # 3. Start application
-./start-containers.sh
+./scripts/start-containers.sh
 
 # 4. Open browser
 # http://localhost:8080
@@ -155,7 +155,7 @@ For complete installation instructions including:
 - Troubleshooting
 - Production deployment
 
-**See: [Complete Installation Guide (INSTALL.md)](INSTALL.md)**
+**See: [Complete Installation Guide (INSTALL.md)](docs/INSTALL.md)**
 
 ### Quick Access
 
@@ -180,12 +180,12 @@ For complete installation instructions including:
    **Option A: Bulk Import (Recommended)**
    ```bash
    # For Portuguese CSV (Google Sheets format with column pairs)
-   ./import-exercises-pt.sh Imports/exercicios.csv
+   ./scripts/import-exercises-pt.sh Imports/exercicios.csv
 
    # For standard CSV format
-   ./import-exercises.sh exercises_template.csv
+   ./scripts/import-exercises.sh exercises_template.csv
    ```
-   See **[Exercise Import Guide](IMPORT_EXERCISES_GUIDE.md)** for detailed instructions.
+   See **[Exercise Import Guide](docs/IMPORT_EXERCISES_GUIDE.md)** for detailed instructions.
 
    **Option B: Manual Entry**
    - Go to "Exercises" tab
@@ -376,7 +376,7 @@ If you encounter issues running with Podman on WSL2, see the **[WSL2 + Podman Se
 If you encounter "nftables error: nft did not return successfully" with Docker Compose in WSL2:
 ```bash
 # Solution 1: Use Podman instead (recommended)
-bash start-containers.sh
+bash scripts/start-containers.sh
 
 # Solution 2: Disable BuildKit for Docker
 export DOCKER_BUILDKIT=0
@@ -404,7 +404,7 @@ docker-compose up -d --build backend
 # Podman
 podman logs gym_backend
 podman stop gym_backend && podman rm gym_backend
-bash start-containers.sh
+bash scripts/start-containers.sh
 ```
 
 ### Bcrypt Password Hashing Error
@@ -457,10 +457,10 @@ podman stop gym_nginx gym_backend gym_postgres  # Stop all
 
 ### Quick Links
 - **[Quick Start Guide](docs/QUICK_START.md)** - Get running in 5 minutes
-- **[Installation Guide](INSTALL.md)** - Complete installation instructions
-- **[Migration Guide](MIGRATION_GUIDE.md)** - Migrate to new server
-- **[Exercise Import Guide](IMPORT_EXERCISES_GUIDE.md)** - Import exercises from CSV files
-- **[Admin Guide](ADMIN_GUIDE.md)** - Admin scripts and user management
+- **[Installation Guide](docs/INSTALL.md)** - Complete installation instructions
+- **[Migration Guide](docs/MIGRATION_GUIDE.md)** - Migrate to new server
+- **[Exercise Import Guide](docs/IMPORT_EXERCISES_GUIDE.md)** - Import exercises from CSV files
+- **[Admin Guide](docs/ADMIN_GUIDE.md)** - Admin scripts and user management
 - **[WSL2 + Podman Setup](docs/WSL2_PODMAN_SETUP.md)** - WSL2/Podman configuration guide
 - **[API Documentation](docs/API.md)** - Complete API reference
 - **[Development Guide](docs/DEVELOPMENT.md)** - Developer setup and workflow
