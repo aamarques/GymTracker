@@ -53,7 +53,7 @@ class Exercise(Base):
     # Relationships
     creator = relationship("User", back_populates="created_exercises")
     plan_exercises = relationship("PlanExercise", back_populates="exercise", cascade="all, delete-orphan")
-    exercise_logs = relationship("ExerciseLog", back_populates="exercise")
+    exercise_logs = relationship("ExerciseLog", back_populates="exercise", passive_deletes=True)
     assigned_exercises = relationship("AssignedExercise", back_populates="exercise", cascade="all, delete-orphan")
 
     @property
