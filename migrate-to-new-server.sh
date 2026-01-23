@@ -30,7 +30,7 @@ backup_database() {
     echo ""
 
     # Check if container is running
-    if ! docker ps | grep -q gym_backend && ! podman ps | grep -q gym_backend; then
+    if ! podman ps | grep -q gym_backend && ! podman ps | grep -q gym_backend; then
         echo -e "${RED}❌ Error: Backend container is not running!${NC}"
         echo ""
         echo "Start containers first:"
@@ -200,7 +200,7 @@ restore_database() {
     echo "⏳ Step 5/8: Waiting for PostgreSQL to initialize..."
     sleep 10
     for i in {1..30}; do
-        if docker exec gym_postgres_temp pg_isready -U gymuser &>/dev/null; then
+        if podman exec gym_postgres_temp pg_isready -U gymuser &>/dev/null; then
             echo -e "${GREEN}✅ PostgreSQL is ready!${NC}"
             break
         fi
@@ -216,14 +216,14 @@ restore_database() {
     echo ""
     echo "💾 Step 6/8: Restoring database..."
     if [ -f "database.sql.gz" ]; then
-        gunzip -c database.sql.gz | docker exec -i gym_postgres_temp psql -U gymuser gymtracker
+        gunzip -c database.sql.gz | podman exec -i gym_postgres_temp psql -U gymuser gymtracker
     elif [ -f "database.sql" ]; then
-        docker exec -i gym_postgres_temp psql -U gymuser gymtracker < database.sql
+        podman exec -i gym_postgres_temp psql -U gymuser gymtracker < database.sql
     fi
 
     # Verify restore
-    EXERCISE_COUNT=$(docker exec gym_postgres_temp psql -U gymuser gymtracker -t -c "SELECT COUNT(*) FROM exercises;" 2>/dev/null | xargs)
-    USER_COUNT=$(docker exec gym_postgres_temp psql -U gymuser gymtracker -t -c "SELECT COUNT(*) FROM users;" 2>/dev/null | xargs)
+    EXERCISE_COUNT=$(podman exec gym_postgres_temp psql -U gymuser gymtracker -t -c "SELECT COUNT(*) FROM exercises;" 2>/dev/null | xargs)
+    USER_COUNT=$(podman exec gym_postgres_temp psql -U gymuser gymtracker -t -c "SELECT COUNT(*) FROM users;" 2>/dev/null | xargs)
 
     echo -e "${GREEN}✅ Database restored:${NC}"
     echo "   - Users: $USER_COUNT"
@@ -264,7 +264,7 @@ restore_database() {
     # Verify
     echo ""
     echo "🔍 Verifying installation..."
-    docker ps --filter "name=gym_" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+    podman ps --filter "name=gym_" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
     echo ""
     echo "============================================================"
@@ -282,7 +282,7 @@ restore_database() {
     echo "  - $IMG_COUNT images"
     echo ""
     echo "To verify:"
-    echo "  docker ps"
+    echo "  podman ps"
     echo "  curl http://localhost/health"
     echo ""
 }

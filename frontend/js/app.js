@@ -227,6 +227,8 @@ function showTab(tabName) {
 function showLoginForm() {
     document.getElementById('login-form').style.display = 'block';
     document.getElementById('register-form').style.display = 'none';
+    // Clear password field when showing login form (e.g., on back navigation)
+    document.getElementById('login-password').value = '';
     updatePageTranslations();
 }
 
@@ -1821,7 +1823,12 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const email = document.getElementById('login-email').value;
         const password = document.getElementById('login-password').value;
-        await login(email, password);
+        try {
+            await login(email, password);
+        } finally {
+            // Clear password field after login attempt (success or failure)
+            document.getElementById('login-password').value = '';
+        }
     });
 
     document.getElementById('register').addEventListener('submit', async (e) => {

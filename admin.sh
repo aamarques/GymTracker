@@ -5,7 +5,7 @@
 cd "$(dirname "$0")"
 
 # Check if container is running
-if ! docker ps | grep -q "gym_backend.*Up"; then
+if ! podman ps | grep -q "gym_backend.*Up"; then
     echo "❌ Error: Backend container is not running!"
     echo ""
     echo "Start the containers first:"
@@ -15,4 +15,4 @@ if ! docker ps | grep -q "gym_backend.*Up"; then
 fi
 
 # Run admin.py inside the container
-docker exec -it gym_backend python admin.py
+podman exec -it gym_backend python admin.py
