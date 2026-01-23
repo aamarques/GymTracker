@@ -25,7 +25,7 @@ MUSCLE_GROUP_MAP = {
     'back': 'Back',
     'triceps': 'Triceps',
     'biceps': 'Biceps',
-    'abs': 'Core',
+    'abs': 'Abs',  # Fixed: Images use 'Abs' not 'Core'
     'cardio': 'Cardio',
     'glutes': 'Glutes',
 }
