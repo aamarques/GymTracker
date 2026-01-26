@@ -206,7 +206,8 @@ function showApp() {
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('app-screen').style.display = 'block';
     updatePageTranslations();
-    loadDashboard();
+    // Always show dashboard tab when logging in
+    showTab('dashboard');
 }
 
 function showTab(tabName) {
@@ -593,14 +594,17 @@ async function loadClients() {
     if (currentUser.role !== 'personal_trainer') return;
 
     try {
-        const clients = await apiRequest('/users/clients');
-        displayClients(clients);
+        const [clients, workoutPlans] = await Promise.all([
+            apiRequest('/users/clients'),
+            apiRequest('/workout-plans')
+        ]);
+        displayClients(clients, workoutPlans);
     } catch (error) {
         console.error('Failed to load clients:', error);
     }
 }
 
-function displayClients(clients) {
+function displayClients(clients, workoutPlans = []) {
     const container = document.getElementById('clients-list');
 
     const headerHtml = `
@@ -620,18 +624,50 @@ function displayClients(clients) {
         return;
     }
 
-    container.innerHTML = headerHtml + clients.map(client => `
+    container.innerHTML = headerHtml + clients.map(client => {
+        // Find workout plans for this client
+        const clientPlans = workoutPlans.filter(plan => plan.user_id === client.id);
+
+        return `
         <div class="client-card">
             <h3>${client.name}</h3>
             <p><strong>${t('clients.email')}:</strong> ${client.email}</p>
             <p><strong>${t('clients.joined')}:</strong> ${new Date(client.created_at).toLocaleDateString()}</p>
+
+            ${clientPlans.length > 0 ? `
+                <div style="margin-top: 16px;">
+                    <strong>Workout Plans (${clientPlans.length}):</strong>
+                    <div style="margin-top: 8px;">
+                        ${clientPlans.map(plan => `
+                            <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 8px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <strong>${plan.name}</strong>
+                                        ${plan.is_active ? '<span class="exercise-tag" style="margin-left: 8px;">Active</span>' : ''}
+                                        <div style="font-size: 0.9em; opacity: 0.7; margin-top: 4px;">
+                                            ${plan.plan_exercises.length} exercises
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; gap: 8px;">
+                                        <button onclick="viewWorkoutPlanDetails('${plan.id}')" class="btn btn-small">View</button>
+                                        <button onclick="editWorkoutPlan('${plan.id}')" class="btn btn-small">Edit</button>
+                                        <button onclick="deleteWorkoutPlan('${plan.id}')" class="btn btn-small btn-danger">Delete</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
+
             <div style="margin-top: 12px; display: flex; gap: 8px;">
                 <button onclick="viewClientDetails('${client.id}')" class="btn btn-small btn-primary">${t('clients.view_details')}</button>
                 <button onclick="createWorkoutPlanForClient('${client.id}')" class="btn btn-small">${t('clients.create_workout')}</button>
                 <button onclick="unassignClient('${client.id}')" class="btn btn-small btn-danger">${t('clients.remove')}</button>
             </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
 }
 
 async function showAddClientModal() {
@@ -1114,9 +1150,11 @@ async function deleteWorkoutPlan(planId) {
         if (response.ok || response.status === 204) {
             showAlert('Workout plan deleted successfully!');
             loadPlans();
+            loadClients(); // Also refresh clients page if PT is viewing it
         } else if (response.status === 404) {
             showAlert('Workout plan not found. It may have already been deleted.', 'error');
             loadPlans(); // Refresh to show current state
+            loadClients();
         } else {
             const error = await response.json().catch(() => ({ detail: 'Failed to delete workout plan' }));
             showAlert(error.detail || 'Failed to delete workout plan', 'error');
@@ -1124,6 +1162,97 @@ async function deleteWorkoutPlan(planId) {
     } catch (error) {
         console.error('Failed to delete workout plan:', error);
         showAlert('Failed to delete workout plan', 'error');
+    }
+}
+
+async function viewWorkoutPlanDetails(planId) {
+    try {
+        const plan = await apiRequest(`/workout-plans/${planId}`);
+
+        const modal = createModal(plan.name, `
+            <div style="margin-bottom: 16px;">
+                <p><strong>Description:</strong> ${plan.description || 'No description'}</p>
+                <p><strong>Status:</strong> ${plan.is_active ? '<span class="exercise-tag">Active</span>' : 'Inactive'}</p>
+            </div>
+            <div>
+                <strong>Exercises (${plan.plan_exercises.length}):</strong>
+                <div style="margin-top: 12px;">
+                    ${plan.plan_exercises.map((pe, index) => `
+                        <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: start;">
+                                <div>
+                                    <strong>${index + 1}. ${pe.exercise?.name || 'Exercise'}</strong>
+                                    <div style="margin-top: 8px; font-size: 0.9em; opacity: 0.8;">
+                                        <div>Sets: ${pe.sets} | Reps: ${pe.reps} | Weight: ${pe.weight || 0} kg</div>
+                                        <div>Rest: ${pe.rest_time}s</div>
+                                    </div>
+                                </div>
+                                <span class="muscle-tag">${pe.exercise?.muscle_group ? t('muscle.' + pe.exercise.muscle_group.toLowerCase()) : ''}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            <div style="margin-top: 20px; display: flex; gap: 8px;">
+                <button onclick="closeModal(); editWorkoutPlan('${plan.id}')" class="btn btn-primary">Edit Plan</button>
+                <button onclick="closeModal()" class="btn">Close</button>
+            </div>
+        `);
+    } catch (error) {
+        console.error('Failed to load workout plan:', error);
+        showAlert('Failed to load workout plan details', 'error');
+    }
+}
+
+async function editWorkoutPlan(planId) {
+    try {
+        const plan = await apiRequest(`/workout-plans/${planId}`);
+
+        const modal = createModal('Edit Workout Plan', `
+            <form id="edit-plan-form">
+                <div class="form-group">
+                    <label for="edit-plan-name">Workout Plan Name</label>
+                    <input type="text" id="edit-plan-name" value="${plan.name}" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-plan-description">Description</label>
+                    <textarea id="edit-plan-description">${plan.description || ''}</textarea>
+                </div>
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                        <input type="checkbox" id="edit-plan-active" ${plan.is_active ? 'checked' : ''}>
+                        <span>Set as Active Plan</span>
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary">Update Workout Plan</button>
+            </form>
+        `);
+
+        document.getElementById('edit-plan-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const updateData = {
+                name: document.getElementById('edit-plan-name').value,
+                description: document.getElementById('edit-plan-description').value,
+                is_active: document.getElementById('edit-plan-active').checked
+            };
+
+            try {
+                await apiRequest(`/workout-plans/${planId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(updateData)
+                });
+                closeModal();
+                showAlert('Workout plan updated successfully!');
+                loadClients(); // Refresh the clients list
+            } catch (error) {
+                console.error('Failed to update workout plan:', error);
+                showAlert(error.message || 'Failed to update workout plan', 'error');
+            }
+        });
+    } catch (error) {
+        console.error('Failed to load workout plan:', error);
+        showAlert('Failed to load workout plan', 'error');
     }
 }
 
