@@ -422,3 +422,59 @@ async def update_plan_exercise_weight(
     db.commit()
 
     return {"message": "Weight updated successfully", "weight": plan_exercise.weight}
+
+
+@router.put("/exercises/{plan_exercise_id}")
+async def update_plan_exercise(
+    plan_exercise_id: str,
+    exercise_data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update a specific exercise in a workout plan (sets, reps, rest, weight)"""
+    # Get the plan exercise
+    plan_exercise = db.query(PlanExercise).filter(PlanExercise.id == plan_exercise_id).first()
+
+    if not plan_exercise:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Plan exercise not found"
+        )
+
+    # Get the workout plan to check permissions
+    plan = db.query(WorkoutPlan).filter(WorkoutPlan.id == plan_exercise.workout_plan_id).first()
+
+    if not plan:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Workout plan not found"
+        )
+
+    # Check permissions: PT must be the trainer of the client who owns this plan
+    if current_user.role == UserRole.PERSONAL_TRAINER:
+        client = db.query(User).filter(User.id == plan.user_id).first()
+        if not client or client.personal_trainer_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You don't have permission to modify this plan"
+            )
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only personal trainers can edit workout plan details"
+        )
+
+    # Update the fields
+    if 'sets' in exercise_data:
+        plan_exercise.sets = str(exercise_data['sets'])
+    if 'reps' in exercise_data:
+        plan_exercise.reps = str(exercise_data['reps'])
+    if 'rest_time' in exercise_data:
+        plan_exercise.rest_time = str(exercise_data['rest_time'])
+    if 'weight' in exercise_data:
+        plan_exercise.weight = exercise_data['weight']
+
+    db.commit()
+    db.refresh(plan_exercise)
+
+    return {"message": "Exercise updated successfully"}

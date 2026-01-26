@@ -1206,7 +1206,14 @@ async function viewWorkoutPlanDetails(planId) {
 
 async function editWorkoutPlan(planId) {
     try {
-        const plan = await apiRequest(`/workout-plans/${planId}`);
+        const [plan, exercises] = await Promise.all([
+            apiRequest(`/workout-plans/${planId}`),
+            apiRequest('/exercises')
+        ]);
+
+        // Store globally for adding exercises
+        window.editPlanExercises = exercises;
+        window.editPlanId = planId;
 
         const modal = createModal('Edit Workout Plan', `
             <form id="edit-plan-form">
@@ -1224,35 +1231,174 @@ async function editWorkoutPlan(planId) {
                         <span>Set as Active Plan</span>
                     </label>
                 </div>
-                <button type="submit" class="btn btn-primary">Update Workout Plan</button>
+
+                <h4 style="margin-top: 24px; margin-bottom: 12px;">Exercises</h4>
+                <div id="edit-exercises-list">
+                    ${plan.plan_exercises.map((pe, index) => `
+                        <div class="edit-exercise-item" data-plan-exercise-id="${pe.id}" style="padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 10px;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                                <strong>${pe.exercise?.name || 'Exercise'}</strong>
+                                <button type="button" onclick="removeExerciseFromEditPlan('${pe.id}')" class="btn btn-small btn-danger">Remove</button>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+                                <div class="form-group">
+                                    <label>Sets</label>
+                                    <input type="text" class="edit-exercise-sets" value="${pe.sets}" placeholder="e.g., 3, Max" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Reps</label>
+                                    <input type="text" class="edit-exercise-reps" value="${pe.reps}" placeholder="e.g., 10, Max" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Rest</label>
+                                    <input type="text" class="edit-exercise-rest" value="${pe.rest_time}" placeholder="e.g., 60, 5'">
+                                </div>
+                                <div class="form-group">
+                                    <label>Weight (kg)</label>
+                                    <input type="number" class="edit-exercise-weight" value="${pe.weight || 0}" min="0" step="0.5">
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <button type="button" onclick="addExerciseToEditPlan()" class="btn btn-small" style="margin-top: 10px;">+ Add Exercise</button>
+
+                <div style="margin-top: 20px; display: flex; gap: 8px;">
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <button type="button" onclick="closeModal()" class="btn">Cancel</button>
+                </div>
             </form>
         `);
 
         document.getElementById('edit-plan-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-
-            const updateData = {
-                name: document.getElementById('edit-plan-name').value,
-                description: document.getElementById('edit-plan-description').value,
-                is_active: document.getElementById('edit-plan-active').checked
-            };
-
-            try {
-                await apiRequest(`/workout-plans/${planId}`, {
-                    method: 'PUT',
-                    body: JSON.stringify(updateData)
-                });
-                closeModal();
-                showAlert('Workout plan updated successfully!');
-                loadClients(); // Refresh the clients list
-            } catch (error) {
-                console.error('Failed to update workout plan:', error);
-                showAlert(error.message || 'Failed to update workout plan', 'error');
-            }
+            await saveWorkoutPlanEdits(planId, plan);
         });
     } catch (error) {
         console.error('Failed to load workout plan:', error);
         showAlert('Failed to load workout plan', 'error');
+    }
+}
+
+async function addExerciseToEditPlan() {
+    const exercises = window.editPlanExercises || [];
+    const exercisesList = document.getElementById('edit-exercises-list');
+
+    const exerciseHtml = `
+        <div class="edit-exercise-item new-exercise" style="padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                <div class="form-group" style="flex: 1; margin: 0;">
+                    <label>Exercise</label>
+                    <select class="edit-exercise-select" required>
+                        <option value="">Select exercise...</option>
+                        ${exercises.sort((a, b) => a.name.localeCompare(b.name)).map(e => `<option value="${e.id}">${e.name}</option>`).join('')}
+                    </select>
+                </div>
+                <button type="button" onclick="this.closest('.edit-exercise-item').remove()" class="btn btn-small btn-danger" style="margin-left: 10px;">Remove</button>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+                <div class="form-group">
+                    <label>Sets</label>
+                    <input type="text" class="edit-exercise-sets" value="3" placeholder="e.g., 3, Max" required>
+                </div>
+                <div class="form-group">
+                    <label>Reps</label>
+                    <input type="text" class="edit-exercise-reps" value="10" placeholder="e.g., 10, Max" required>
+                </div>
+                <div class="form-group">
+                    <label>Rest</label>
+                    <input type="text" class="edit-exercise-rest" value="60" placeholder="e.g., 60, 5'">
+                </div>
+                <div class="form-group">
+                    <label>Weight (kg)</label>
+                    <input type="number" class="edit-exercise-weight" value="0" min="0" step="0.5">
+                </div>
+            </div>
+        </div>
+    `;
+
+    exercisesList.insertAdjacentHTML('beforeend', exerciseHtml);
+}
+
+async function removeExerciseFromEditPlan(planExerciseId) {
+    if (!confirm('Remove this exercise from the plan?')) return;
+
+    try {
+        const planId = window.editPlanId;
+        await apiRequest(`/workout-plans/${planId}/exercises/${planExerciseId}`, {
+            method: 'DELETE'
+        });
+
+        // Remove from UI
+        document.querySelector(`[data-plan-exercise-id="${planExerciseId}"]`).remove();
+        showAlert('Exercise removed from plan');
+    } catch (error) {
+        console.error('Failed to remove exercise:', error);
+        showAlert('Failed to remove exercise', 'error');
+    }
+}
+
+async function saveWorkoutPlanEdits(planId, originalPlan) {
+    try {
+        // Update plan metadata
+        const updateData = {
+            name: document.getElementById('edit-plan-name').value,
+            description: document.getElementById('edit-plan-description').value,
+            is_active: document.getElementById('edit-plan-active').checked
+        };
+
+        await apiRequest(`/workout-plans/${planId}`, {
+            method: 'PUT',
+            body: JSON.stringify(updateData)
+        });
+
+        // Update existing exercises
+        const existingExercises = document.querySelectorAll('.edit-exercise-item:not(.new-exercise)');
+        for (const exerciseEl of existingExercises) {
+            const planExerciseId = exerciseEl.dataset.planExerciseId;
+            const sets = exerciseEl.querySelector('.edit-exercise-sets').value;
+            const reps = exerciseEl.querySelector('.edit-exercise-reps').value;
+            const rest_time = exerciseEl.querySelector('.edit-exercise-rest').value;
+            const weight = parseFloat(exerciseEl.querySelector('.edit-exercise-weight').value) || 0;
+
+            await apiRequest(`/workout-plans/exercises/${planExerciseId}`, {
+                method: 'PUT',
+                body: JSON.stringify({ sets, reps, rest_time, weight })
+            });
+        }
+
+        // Add new exercises
+        const newExercises = document.querySelectorAll('.edit-exercise-item.new-exercise');
+        for (const exerciseEl of newExercises) {
+            const exerciseId = exerciseEl.querySelector('.edit-exercise-select').value;
+            if (!exerciseId) continue;
+
+            const sets = exerciseEl.querySelector('.edit-exercise-sets').value;
+            const reps = exerciseEl.querySelector('.edit-exercise-reps').value;
+            const rest_time = exerciseEl.querySelector('.edit-exercise-rest').value;
+            const weight = parseFloat(exerciseEl.querySelector('.edit-exercise-weight').value) || 0;
+            const order = originalPlan.plan_exercises.length + Array.from(newExercises).indexOf(exerciseEl);
+
+            await apiRequest(`/workout-plans/${planId}/exercises`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    exercise_id: exerciseId,
+                    sets,
+                    reps,
+                    rest_time,
+                    weight,
+                    order
+                })
+            });
+        }
+
+        closeModal();
+        showAlert('Workout plan updated successfully!');
+        loadClients(); // Refresh the clients list
+    } catch (error) {
+        console.error('Failed to update workout plan:', error);
+        showAlert(error.message || 'Failed to update workout plan', 'error');
     }
 }
 
