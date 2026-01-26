@@ -108,9 +108,18 @@ async def get_workout_plans(
     from app.models.models import ExerciseLog, WorkoutSession
     from sqlalchemy import desc
 
-    plans = db.query(WorkoutPlan).filter(
-        WorkoutPlan.user_id == current_user.id
-    ).offset(skip).limit(limit).all()
+    # Different query based on user role
+    if current_user.role == UserRole.PERSONAL_TRAINER:
+        # PT sees all workout plans for their clients
+        # Join WorkoutPlan with User to filter by personal_trainer_id
+        plans = db.query(WorkoutPlan).join(User, WorkoutPlan.user_id == User.id).filter(
+            User.personal_trainer_id == current_user.id
+        ).offset(skip).limit(limit).all()
+    else:
+        # Clients see only their own workout plans
+        plans = db.query(WorkoutPlan).filter(
+            WorkoutPlan.user_id == current_user.id
+        ).offset(skip).limit(limit).all()
 
     # Enrich plan exercises with last weight used
     for plan in plans:
@@ -138,10 +147,19 @@ async def get_workout_plan(
     from app.models.models import ExerciseLog, WorkoutSession
     from sqlalchemy import desc
 
-    plan = db.query(WorkoutPlan).filter(
-        WorkoutPlan.id == plan_id,
-        WorkoutPlan.user_id == current_user.id
-    ).first()
+    # Different query based on user role
+    if current_user.role == UserRole.PERSONAL_TRAINER:
+        # PT can view workout plans for their clients
+        plan = db.query(WorkoutPlan).join(User, WorkoutPlan.user_id == User.id).filter(
+            WorkoutPlan.id == plan_id,
+            User.personal_trainer_id == current_user.id
+        ).first()
+    else:
+        # Clients can only view their own workout plans
+        plan = db.query(WorkoutPlan).filter(
+            WorkoutPlan.id == plan_id,
+            WorkoutPlan.user_id == current_user.id
+        ).first()
 
     if not plan:
         raise HTTPException(
@@ -172,10 +190,19 @@ async def update_workout_plan(
     db: Session = Depends(get_db)
 ):
     """Update workout plan"""
-    plan = db.query(WorkoutPlan).filter(
-        WorkoutPlan.id == plan_id,
-        WorkoutPlan.user_id == current_user.id
-    ).first()
+    # Different query based on user role
+    if current_user.role == UserRole.PERSONAL_TRAINER:
+        # PT can update workout plans for their clients
+        plan = db.query(WorkoutPlan).join(User, WorkoutPlan.user_id == User.id).filter(
+            WorkoutPlan.id == plan_id,
+            User.personal_trainer_id == current_user.id
+        ).first()
+    else:
+        # Clients can only update their own workout plans
+        plan = db.query(WorkoutPlan).filter(
+            WorkoutPlan.id == plan_id,
+            WorkoutPlan.user_id == current_user.id
+        ).first()
 
     if not plan:
         raise HTTPException(
@@ -203,10 +230,19 @@ async def delete_workout_plan(
     db: Session = Depends(get_db)
 ):
     """Delete workout plan"""
-    plan = db.query(WorkoutPlan).filter(
-        WorkoutPlan.id == plan_id,
-        WorkoutPlan.user_id == current_user.id
-    ).first()
+    # Different query based on user role
+    if current_user.role == UserRole.PERSONAL_TRAINER:
+        # PT can delete workout plans for their clients
+        plan = db.query(WorkoutPlan).join(User, WorkoutPlan.user_id == User.id).filter(
+            WorkoutPlan.id == plan_id,
+            User.personal_trainer_id == current_user.id
+        ).first()
+    else:
+        # Clients can only delete their own workout plans
+        plan = db.query(WorkoutPlan).filter(
+            WorkoutPlan.id == plan_id,
+            WorkoutPlan.user_id == current_user.id
+        ).first()
 
     if not plan:
         raise HTTPException(
@@ -228,10 +264,19 @@ async def add_exercise_to_plan(
     db: Session = Depends(get_db)
 ):
     """Add an exercise to workout plan"""
-    plan = db.query(WorkoutPlan).filter(
-        WorkoutPlan.id == plan_id,
-        WorkoutPlan.user_id == current_user.id
-    ).first()
+    # Different query based on user role
+    if current_user.role == UserRole.PERSONAL_TRAINER:
+        # PT can modify workout plans for their clients
+        plan = db.query(WorkoutPlan).join(User, WorkoutPlan.user_id == User.id).filter(
+            WorkoutPlan.id == plan_id,
+            User.personal_trainer_id == current_user.id
+        ).first()
+    else:
+        # Clients can only modify their own workout plans
+        plan = db.query(WorkoutPlan).filter(
+            WorkoutPlan.id == plan_id,
+            WorkoutPlan.user_id == current_user.id
+        ).first()
 
     if not plan:
         raise HTTPException(
@@ -292,10 +337,19 @@ async def remove_exercise_from_plan(
     db: Session = Depends(get_db)
 ):
     """Remove an exercise from workout plan"""
-    plan = db.query(WorkoutPlan).filter(
-        WorkoutPlan.id == plan_id,
-        WorkoutPlan.user_id == current_user.id
-    ).first()
+    # Different query based on user role
+    if current_user.role == UserRole.PERSONAL_TRAINER:
+        # PT can modify workout plans for their clients
+        plan = db.query(WorkoutPlan).join(User, WorkoutPlan.user_id == User.id).filter(
+            WorkoutPlan.id == plan_id,
+            User.personal_trainer_id == current_user.id
+        ).first()
+    else:
+        # Clients can only modify their own workout plans
+        plan = db.query(WorkoutPlan).filter(
+            WorkoutPlan.id == plan_id,
+            WorkoutPlan.user_id == current_user.id
+        ).first()
 
     if not plan:
         raise HTTPException(

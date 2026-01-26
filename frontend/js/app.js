@@ -874,6 +874,9 @@ async function createWorkoutPlanForClient(clientId) {
             return;
         }
 
+        // Get unique muscle groups for filter
+        const muscleGroups = [...new Set(exercises.map(e => e.muscle_group))].sort();
+
         const modal = createModal('Create Workout Plan', `
             <form id="add-plan-form">
                 <div class="form-group">
@@ -895,6 +898,13 @@ async function createWorkoutPlanForClient(clientId) {
                 </div>
                 <div id="exercises-container">
                     <h4>Add Exercises</h4>
+                    <div class="form-group">
+                        <label for="muscle-group-filter">Filter by Muscle Group</label>
+                        <select id="muscle-group-filter">
+                            <option value="">All Muscle Groups</option>
+                            ${muscleGroups.map(mg => `<option value="${mg}">${mg}</option>`).join('')}
+                        </select>
+                    </div>
                     <div id="exercise-list"></div>
                     <button type="button" onclick="addExerciseToWorkout()" class="btn btn-small" style="margin-top: 10px;">+ Add Exercise</button>
                 </div>
@@ -902,8 +912,17 @@ async function createWorkoutPlanForClient(clientId) {
             </form>
         `);
 
-        // Store clientId globally for this modal
+        // Store clientId and exercises globally for this modal
         window.currentClientId = clientId;
+        window.workoutPlanExercises = exercises;
+
+        // Add event listener for muscle group filter
+        const muscleGroupFilter = document.getElementById('muscle-group-filter');
+        if (muscleGroupFilter) {
+            muscleGroupFilter.addEventListener('change', () => {
+                updateAllExerciseDropdowns();
+            });
+        }
 
         document.getElementById('add-plan-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -967,41 +986,79 @@ async function createWorkoutPlanForClient(clientId) {
 
 function addExerciseToWorkout() {
     const container = document.getElementById('exercise-list');
-    const exerciseId = `exercise-${Date.now()}`;
+    const muscleGroupFilter = document.getElementById('muscle-group-filter');
+    const selectedMuscleGroup = muscleGroupFilter ? muscleGroupFilter.value : '';
 
-    // Get exercises from API
-    apiRequest('/exercises').then(exercises => {
-        const exerciseHtml = `
-            <div class="workout-exercise-item" style="padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 10px;">
-                <div class="form-group">
-                    <label>Exercise</label>
-                    <select class="exercise-select" required>
-                        <option value="">Select exercise...</option>
-                        ${exercises.map(e => `<option value="${e.id}">${e.name}</option>`).join('')}
-                    </select>
-                </div>
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
-                    <div class="form-group">
-                        <label>Sets</label>
-                        <input type="number" class="exercise-sets" min="1" value="3" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Reps</label>
-                        <input type="number" class="exercise-reps" min="1" value="10" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Weight (kg)</label>
-                        <input type="number" class="exercise-weight" min="0" step="0.5" value="0">
-                    </div>
-                    <div class="form-group">
-                        <label>Rest (sec)</label>
-                        <input type="number" class="exercise-rest" min="0" value="60">
-                    </div>
-                </div>
-                <button type="button" onclick="this.parentElement.remove()" class="btn btn-small btn-danger" style="margin-top: 10px;">Remove</button>
+    // Use globally stored exercises
+    let exercises = window.workoutPlanExercises || [];
+
+    // Filter by muscle group if selected
+    if (selectedMuscleGroup) {
+        exercises = exercises.filter(e => e.muscle_group === selectedMuscleGroup);
+    }
+
+    // Sort alphabetically by name
+    exercises = exercises.sort((a, b) => a.name.localeCompare(b.name));
+
+    const exerciseHtml = `
+        <div class="workout-exercise-item" style="padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 10px;">
+            <div class="form-group">
+                <label>Exercise</label>
+                <select class="exercise-select" required>
+                    <option value="">Select exercise...</option>
+                    ${exercises.map(e => `<option value="${e.id}">${e.name}</option>`).join('')}
+                </select>
             </div>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+                <div class="form-group">
+                    <label>Sets</label>
+                    <input type="number" class="exercise-sets" min="1" value="3" required>
+                </div>
+                <div class="form-group">
+                    <label>Reps</label>
+                    <input type="number" class="exercise-reps" min="1" value="10" required>
+                </div>
+                <div class="form-group">
+                    <label>Weight (kg)</label>
+                    <input type="number" class="exercise-weight" min="0" step="0.5" value="0">
+                </div>
+                <div class="form-group">
+                    <label>Rest (sec)</label>
+                    <input type="number" class="exercise-rest" min="0" value="60">
+                </div>
+            </div>
+            <button type="button" onclick="this.parentElement.remove()" class="btn btn-small btn-danger" style="margin-top: 10px;">Remove</button>
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', exerciseHtml);
+}
+
+function updateAllExerciseDropdowns() {
+    const muscleGroupFilter = document.getElementById('muscle-group-filter');
+    const selectedMuscleGroup = muscleGroupFilter ? muscleGroupFilter.value : '';
+
+    // Get filtered and sorted exercises
+    let exercises = window.workoutPlanExercises || [];
+    if (selectedMuscleGroup) {
+        exercises = exercises.filter(e => e.muscle_group === selectedMuscleGroup);
+    }
+    exercises = exercises.sort((a, b) => a.name.localeCompare(b.name));
+
+    // Update all exercise dropdowns
+    const exerciseSelects = document.querySelectorAll('.exercise-select');
+    exerciseSelects.forEach(select => {
+        const currentValue = select.value;
+
+        // Rebuild options
+        select.innerHTML = `
+            <option value="">Select exercise...</option>
+            ${exercises.map(e => `<option value="${e.id}">${e.name}</option>`).join('')}
         `;
-        container.insertAdjacentHTML('beforeend', exerciseHtml);
+
+        // Restore selection if the exercise is still in the filtered list
+        if (currentValue && exercises.some(e => e.id === currentValue)) {
+            select.value = currentValue;
+        }
     });
 }
 

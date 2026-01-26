@@ -28,7 +28,14 @@
       "Bash(./import-exercises-pt.sh)",
       "Bash(./start-containers.sh:*)",
       "Bash(./import-exercises-pt.sh:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(git commit:*)",
+      "Bash(./delete-user.sh:*)",
+      "Bash(git mv:*)",
+      "Bash(for file in ADMIN_GUIDE.md ADMIN_SCRIPTS_QUICK.md CHANGELOG.md EMAIL_QUICK_START.md GMAIL_SETUP.md IMAGE_LINKING_VERIFICATION.md IMPORT_EXERCISES_GUIDE.md INSTALL.md METRICS_DOCUMENTATION.md MIGRATION_GUIDE.md PASSWORD_FEATURES.md PROJECT_SUMMARY.md SECURITY_UPDATE.md TROUBLESHOOTING.md)",
+      "Bash(do)",
+      "Bash(done)",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []
