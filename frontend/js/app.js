@@ -968,17 +968,17 @@ async function createWorkoutPlanForClient(clientId) {
 
             exerciseElements.forEach((el, index) => {
                 const exerciseId = el.querySelector('.exercise-select').value;
-                const sets = parseInt(el.querySelector('.exercise-sets').value);
-                const reps = parseInt(el.querySelector('.exercise-reps').value);
+                const sets = el.querySelector('.exercise-sets').value.trim();
+                const reps = el.querySelector('.exercise-reps').value.trim();
                 const weight = parseFloat(el.querySelector('.exercise-weight').value) || 0;
-                const rest = parseInt(el.querySelector('.exercise-rest').value) || 60;
+                const rest = el.querySelector('.exercise-rest').value.trim();
 
                 if (exerciseId && sets && reps) {
                     exercises.push({
                         exercise_id: exerciseId,
-                        sets,
-                        reps,
-                        weight,
+                        sets: sets,
+                        reps: reps,
+                        weight: weight,
                         rest_time: rest,
                         order: index
                     });
@@ -1730,8 +1730,8 @@ async function endWorkout() {
                 method: 'POST',
                 body: JSON.stringify({
                     exercise_id: exercise.exercise_id,
-                    sets_completed: parseInt(planExercise.querySelector('.exercise-info span:nth-child(1)').textContent.split(':')[1]) || 3,
-                    reps_completed: parseInt(planExercise.querySelector('.exercise-info span:nth-child(2)').textContent.split(':')[1]) || 10,
+                    sets_completed: planExercise.querySelector('.exercise-info span:nth-child(1)').textContent.split(':')[1].trim() || '3',
+                    reps_completed: planExercise.querySelector('.exercise-info span:nth-child(2)').textContent.split(':')[1].trim() || '10',
                     weight_used: exercise.weight_used,
                     notes: null
                 })
@@ -1802,10 +1802,10 @@ async function logExercise() {
     }
 
     const exerciseId = document.getElementById('log-exercise-select').value;
-    const sets = parseInt(document.getElementById('log-sets').value);
-    const reps = parseInt(document.getElementById('log-reps').value);
+    const sets = document.getElementById('log-sets').value.trim();
+    const reps = document.getElementById('log-reps').value.trim();
     const weight = parseFloat(document.getElementById('log-weight').value) || null;
-    const rest = parseInt(document.getElementById('log-rest').value) || null;
+    const rest = document.getElementById('log-rest').value.trim() || null;
     const notes = document.getElementById('log-notes').value;
 
     if (!exerciseId || !sets || !reps) {
