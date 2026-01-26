@@ -317,3 +317,35 @@ Note: Use `autocomplete="new-password"` for password field (more effective than 
 ---
 
 ## STATUS: RESOLVED (Pending User Verification)
+
+---
+
+## ISSUE PERSISTS - NEW INVESTIGATION
+
+**Date:** 2026-01-23 19:00
+**User Report:** "Well the login issue stills. Is like to click BACK in browser when I click on SAIR."
+
+### New Hypothesis: Browser Back/Forward Cache (bfcache)
+
+**What is bfcache:**
+- Modern browsers cache entire page state including form values
+- When using browser BACK button, page is restored from bfcache
+- Our logout might be getting overridden by bfcache restoration
+
+**Solution Approach:**
+Add `pageshow` event listener to clear fields when page is restored from cache:
+
+```javascript
+// Detect when page is restored from bfcache
+window.addEventListener('pageshow', function(event) {
+    if (event.persisted || performance.getEntriesByType("navigation")[0].type === "back_forward") {
+        // Clear login fields when page restored from cache
+        document.getElementById('login-email').value = '';
+        document.getElementById('login-password').value = '';
+    }
+});
+```
+
+**Testing needed:** Implement and verify
+
+---

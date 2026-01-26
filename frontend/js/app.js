@@ -194,6 +194,11 @@ function updateUIForRole() {
 function showAuth() {
     document.getElementById('auth-screen').style.display = 'flex';
     document.getElementById('app-screen').style.display = 'none';
+    // Always clear login fields when showing auth screen
+    const emailField = document.getElementById('login-email');
+    const passwordField = document.getElementById('login-password');
+    if (emailField) emailField.value = '';
+    if (passwordField) passwordField.value = '';
     updatePageTranslations();
 }
 
@@ -1815,6 +1820,17 @@ function createModal(title, content) {
 function closeModal() {
     document.getElementById('modal-container').innerHTML = '';
 }
+
+// Clear login fields when page is restored from bfcache (browser back/forward cache)
+window.addEventListener('pageshow', function(event) {
+    // If page was restored from bfcache
+    if (event.persisted) {
+        const emailField = document.getElementById('login-email');
+        const passwordField = document.getElementById('login-password');
+        if (emailField) emailField.value = '';
+        if (passwordField) passwordField.value = '';
+    }
+});
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
