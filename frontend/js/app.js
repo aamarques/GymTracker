@@ -1048,19 +1048,19 @@ function addExerciseToWorkout() {
             <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
                 <div class="form-group">
                     <label>Sets</label>
-                    <input type="number" class="exercise-sets" min="1" value="3" required>
+                    <input type="text" class="exercise-sets" value="3" placeholder="e.g., 3, Max, 3-4" required>
                 </div>
                 <div class="form-group">
                     <label>Reps</label>
-                    <input type="number" class="exercise-reps" min="1" value="10" required>
+                    <input type="text" class="exercise-reps" value="10" placeholder="e.g., 10, 10-12, Max" required>
                 </div>
                 <div class="form-group">
                     <label>Weight (kg)</label>
                     <input type="number" class="exercise-weight" min="0" step="0.5" value="0">
                 </div>
                 <div class="form-group">
-                    <label>Rest (sec)</label>
-                    <input type="number" class="exercise-rest" min="0" value="60">
+                    <label>Rest</label>
+                    <input type="text" class="exercise-rest" value="60" placeholder="e.g., 60, 90s, 5'">
                 </div>
             </div>
             <button type="button" onclick="this.parentElement.remove()" class="btn btn-small btn-danger" style="margin-top: 10px;">Remove</button>
@@ -1384,8 +1384,21 @@ async function showWorkoutPlanExercises(plan, isActive) {
                             <div class="exercise-info">
                                 <span><strong>${t('workout.sets')}:</strong> ${pe.sets}</span>
                                 <span><strong>${t('workout.reps')}:</strong> ${pe.reps}</span>
-                                <span><strong>${t('workout.rest')}:</strong> ${pe.rest_time}s</span>
-                                <span><strong>${t('workout.suggested')}:</strong> ${pe.last_weight_used !== null && pe.last_weight_used !== undefined ? pe.last_weight_used : (pe.weight || 0)} kg</span>
+                                <span><strong>${t('workout.rest')}:</strong> ${pe.rest_time}</span>
+                                <span style="display: flex; align-items: center; gap: 8px;">
+                                    <strong>${t('workout.suggested')}:</strong>
+                                    ${isActive ? `
+                                        <input type="number"
+                                               class="suggested-weight-input"
+                                               step="0.5"
+                                               min="0"
+                                               value="${pe.last_weight_used !== null && pe.last_weight_used !== undefined ? pe.last_weight_used : (pe.weight || 0)}"
+                                               data-plan-exercise-id="${pe.id}"
+                                               onchange="updateSuggestedWeight('${pe.id}', this.value)"
+                                               style="width: 70px; padding: 4px 8px;">
+                                        <span>kg</span>
+                                    ` : `${pe.last_weight_used !== null && pe.last_weight_used !== undefined ? pe.last_weight_used : (pe.weight || 0)} kg`}
+                                </span>
                             </div>
                             ${isActive ? `
                                 <div class="exercise-input">
@@ -1461,6 +1474,19 @@ async function displayActiveWorkoutWithExercises() {
 }
 
 let completedExercises = [];
+
+async function updateSuggestedWeight(planExerciseId, newWeight) {
+    try {
+        // Update the weight in the workout plan
+        await apiRequest(`/workout-plans/exercises/${planExerciseId}/weight`, {
+            method: 'PATCH',
+            body: JSON.stringify({ weight: parseFloat(newWeight) || 0 })
+        });
+    } catch (error) {
+        console.error('Failed to update suggested weight:', error);
+        showAlert('Failed to update weight', 'error');
+    }
+}
 
 function markExerciseComplete(index) {
     const card = document.querySelector(`[data-exercise-index="${index}"]`).closest('.workout-exercise-card');

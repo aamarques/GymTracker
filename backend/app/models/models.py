@@ -85,9 +85,9 @@ class PlanExercise(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     workout_plan_id = Column(String, ForeignKey("workout_plans.id", ondelete="CASCADE"), nullable=False)
     exercise_id = Column(String, ForeignKey("exercises.id", ondelete="CASCADE"), nullable=False)
-    sets = Column(Integer, nullable=False)
-    reps = Column(Integer, nullable=False)
-    rest_time = Column(Integer, nullable=False)  # seconds
+    sets = Column(String, nullable=False)  # Changed to String to allow values like "Max", "3-4", etc.
+    reps = Column(String, nullable=False)  # Changed to String to allow values like "10-12", "Max", etc.
+    rest_time = Column(String, nullable=False)  # Changed to String to allow values like "60", "90s", "5'", etc.
     weight = Column(Float, nullable=True)  # kg
     order = Column(Integer, nullable=False, default=0)
 
@@ -118,10 +118,10 @@ class ExerciseLog(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     session_id = Column(String, ForeignKey("workout_sessions.id", ondelete="CASCADE"), nullable=False)
     exercise_id = Column(String, ForeignKey("exercises.id", ondelete="CASCADE"), nullable=False)
-    sets_completed = Column(Integer, nullable=False)
-    reps_completed = Column(Integer, nullable=False)
+    sets_completed = Column(String, nullable=False)  # Changed to String to allow values like "Max", "3-4", etc.
+    reps_completed = Column(String, nullable=False)  # Changed to String to allow values like "10-12", "Max", etc.
     weight_used = Column(Float, nullable=True)  # kg
-    rest_time_actual = Column(Integer, nullable=True)  # seconds
+    rest_time_actual = Column(String, nullable=True)  # Changed to String to allow values like "60", "90s", "5'", etc.
     notes = Column(Text, nullable=True)
     completed_at = Column(DateTime(timezone=True), server_default=func.now())
 

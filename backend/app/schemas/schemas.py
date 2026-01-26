@@ -126,9 +126,9 @@ class ExerciseResponse(ExerciseBase):
 # Workout Plan Schemas
 class PlanExerciseBase(BaseModel):
     exercise_id: str
-    sets: int = Field(gt=0)
-    reps: int = Field(gt=0)
-    rest_time: int = Field(ge=0, description="Rest time in seconds")
+    sets: str = Field(min_length=1, description="Number of sets (e.g., '3', 'Max', '3-4')")
+    reps: str = Field(min_length=1, description="Number of reps (e.g., '10', '10-12', 'Max')")
+    rest_time: str = Field(min_length=1, description="Rest time (e.g., '60', '90s', '5'')")
     weight: Optional[float] = Field(None, ge=0, description="Weight in kg")
     order: int = Field(ge=0)
 
@@ -177,10 +177,10 @@ class WorkoutPlanResponse(WorkoutPlanBase):
 # Workout Session Schemas
 class ExerciseLogBase(BaseModel):
     exercise_id: str
-    sets_completed: int = Field(gt=0)
-    reps_completed: int = Field(gt=0)
+    sets_completed: str = Field(min_length=1, description="Sets completed (e.g., '3', 'Max', '3-4')")
+    reps_completed: str = Field(min_length=1, description="Reps completed (e.g., '10', '10-12', 'Max')")
     weight_used: Optional[float] = Field(None, ge=0)
-    rest_time_actual: Optional[int] = Field(None, ge=0)
+    rest_time_actual: Optional[str] = Field(None, min_length=1, description="Actual rest time (e.g., '60', '90s', '5'')")
     notes: Optional[str] = None
 
 

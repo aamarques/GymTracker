@@ -372,3 +372,53 @@ async def remove_exercise_from_plan(
     db.commit()
 
     return None
+
+
+@router.patch("/exercises/{plan_exercise_id}/weight")
+async def update_plan_exercise_weight(
+    plan_exercise_id: str,
+    weight_data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update the weight for a specific exercise in a workout plan"""
+    # Get the plan exercise
+    plan_exercise = db.query(PlanExercise).filter(PlanExercise.id == plan_exercise_id).first()
+
+    if not plan_exercise:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Plan exercise not found"
+        )
+
+    # Get the workout plan to check permissions
+    plan = db.query(WorkoutPlan).filter(WorkoutPlan.id == plan_exercise.workout_plan_id).first()
+
+    if not plan:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Workout plan not found"
+        )
+
+    # Check permissions: user must own the plan or be the PT of the plan owner
+    if current_user.role == UserRole.PERSONAL_TRAINER:
+        # PT must be the trainer of the client who owns this plan
+        client = db.query(User).filter(User.id == plan.user_id).first()
+        if not client or client.personal_trainer_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You don't have permission to modify this plan"
+            )
+    else:
+        # Client must own the plan
+        if plan.user_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You don't have permission to modify this plan"
+            )
+
+    # Update the weight
+    plan_exercise.weight = weight_data.get('weight', 0)
+    db.commit()
+
+    return {"message": "Weight updated successfully", "weight": plan_exercise.weight}
