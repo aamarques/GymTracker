@@ -473,6 +473,10 @@ async def update_plan_exercise(
         plan_exercise.rest_time = str(exercise_data['rest_time'])
     if 'weight' in exercise_data:
         plan_exercise.weight = exercise_data['weight']
+    if 'equipment_number' in exercise_data:
+        plan_exercise.equipment_number = exercise_data['equipment_number']
+    if 'notes' in exercise_data:
+        plan_exercise.notes = exercise_data['notes']
 
     db.commit()
     db.refresh(plan_exercise)

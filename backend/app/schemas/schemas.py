@@ -130,6 +130,8 @@ class PlanExerciseBase(BaseModel):
     reps: str = Field(min_length=1, description="Number of reps (e.g., '10', '10-12', 'Max')")
     rest_time: str = Field(min_length=1, description="Rest time (e.g., '60', '90s', '5'')")
     weight: Optional[float] = Field(None, ge=0, description="Weight in kg")
+    equipment_number: Optional[str] = Field(None, description="Equipment to use (e.g., 'Machine 5', 'Bench 3')")
+    notes: Optional[str] = Field(None, description="PT instructions/observations for the client")
     order: int = Field(ge=0)
 
 

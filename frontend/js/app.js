@@ -972,6 +972,8 @@ async function createWorkoutPlanForClient(clientId) {
                 const reps = el.querySelector('.exercise-reps').value.trim();
                 const weight = parseFloat(el.querySelector('.exercise-weight').value) || 0;
                 const rest = el.querySelector('.exercise-rest').value.trim();
+                const equipment = el.querySelector('.exercise-equipment')?.value.trim() || null;
+                const notes = el.querySelector('.exercise-notes')?.value.trim() || null;
 
                 if (exerciseId && sets && reps) {
                     exercises.push({
@@ -980,6 +982,8 @@ async function createWorkoutPlanForClient(clientId) {
                         reps: reps,
                         weight: weight,
                         rest_time: rest,
+                        equipment_number: equipment,
+                        notes: notes,
                         order: index
                     });
                 }
@@ -1061,6 +1065,16 @@ function addExerciseToWorkout() {
                 <div class="form-group">
                     <label>Rest</label>
                     <input type="text" class="exercise-rest" value="60" placeholder="e.g., 60, 90s, 5'">
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 10px; margin-top: 10px;">
+                <div class="form-group">
+                    <label>Equipment #</label>
+                    <input type="text" class="exercise-equipment" placeholder="e.g., Machine 5, Bench 3">
+                </div>
+                <div class="form-group">
+                    <label>Observations</label>
+                    <input type="text" class="exercise-notes" placeholder="PT notes/instructions">
                 </div>
             </div>
             <button type="button" onclick="this.parentElement.remove()" class="btn btn-small btn-danger" style="margin-top: 10px;">Remove</button>
@@ -1258,6 +1272,16 @@ async function editWorkoutPlan(planId) {
                                     <input type="number" class="edit-exercise-weight" value="${pe.weight || 0}" min="0" step="0.5">
                                 </div>
                             </div>
+                            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 10px; margin-top: 10px;">
+                                <div class="form-group">
+                                    <label>Equipment #</label>
+                                    <input type="text" class="edit-exercise-equipment" value="${pe.equipment_number || ''}" placeholder="e.g., Machine 5">
+                                </div>
+                                <div class="form-group">
+                                    <label>Observations</label>
+                                    <input type="text" class="edit-exercise-notes" value="${pe.notes || ''}" placeholder="PT notes/instructions">
+                                </div>
+                            </div>
                         </div>
                     `).join('')}
                 </div>
@@ -1315,6 +1339,16 @@ async function addExerciseToEditPlan() {
                     <input type="number" class="edit-exercise-weight" value="0" min="0" step="0.5">
                 </div>
             </div>
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 10px; margin-top: 10px;">
+                <div class="form-group">
+                    <label>Equipment #</label>
+                    <input type="text" class="edit-exercise-equipment" placeholder="e.g., Machine 5">
+                </div>
+                <div class="form-group">
+                    <label>Observations</label>
+                    <input type="text" class="edit-exercise-notes" placeholder="PT notes/instructions">
+                </div>
+            </div>
         </div>
     `;
 
@@ -1361,10 +1395,12 @@ async function saveWorkoutPlanEdits(planId, originalPlan) {
             const reps = exerciseEl.querySelector('.edit-exercise-reps').value;
             const rest_time = exerciseEl.querySelector('.edit-exercise-rest').value;
             const weight = parseFloat(exerciseEl.querySelector('.edit-exercise-weight').value) || 0;
+            const equipment_number = exerciseEl.querySelector('.edit-exercise-equipment')?.value.trim() || null;
+            const notes = exerciseEl.querySelector('.edit-exercise-notes')?.value.trim() || null;
 
             await apiRequest(`/workout-plans/exercises/${planExerciseId}`, {
                 method: 'PUT',
-                body: JSON.stringify({ sets, reps, rest_time, weight })
+                body: JSON.stringify({ sets, reps, rest_time, weight, equipment_number, notes })
             });
         }
 
@@ -1378,6 +1414,8 @@ async function saveWorkoutPlanEdits(planId, originalPlan) {
             const reps = exerciseEl.querySelector('.edit-exercise-reps').value;
             const rest_time = exerciseEl.querySelector('.edit-exercise-rest').value;
             const weight = parseFloat(exerciseEl.querySelector('.edit-exercise-weight').value) || 0;
+            const equipment_number = exerciseEl.querySelector('.edit-exercise-equipment')?.value.trim() || null;
+            const notes = exerciseEl.querySelector('.edit-exercise-notes')?.value.trim() || null;
             const order = originalPlan.plan_exercises.length + Array.from(newExercises).indexOf(exerciseEl);
 
             await apiRequest(`/workout-plans/${planId}/exercises`, {
@@ -1388,6 +1426,8 @@ async function saveWorkoutPlanEdits(planId, originalPlan) {
                     reps,
                     rest_time,
                     weight,
+                    equipment_number,
+                    notes,
                     order
                 })
             });
@@ -1546,6 +1586,12 @@ async function showWorkoutPlanExercises(plan, isActive) {
                                     ` : `${pe.last_weight_used !== null && pe.last_weight_used !== undefined ? pe.last_weight_used : (pe.weight || 0)} kg`}
                                 </span>
                             </div>
+                            ${pe.equipment_number || pe.notes ? `
+                                <div style="margin-top: 8px; padding: 8px; background: rgba(255,255,255,0.03); border-radius: 4px; font-size: 0.9em;">
+                                    ${pe.equipment_number ? `<div><strong>Equipment:</strong> ${pe.equipment_number}</div>` : ''}
+                                    ${pe.notes ? `<div style="margin-top: 4px;"><strong>Observations:</strong> ${pe.notes}</div>` : ''}
+                                </div>
+                            ` : ''}
                             ${isActive ? `
                                 <div class="exercise-input">
                                     <label>${t('workout.weight_used')}:</label>

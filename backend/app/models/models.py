@@ -89,6 +89,8 @@ class PlanExercise(Base):
     reps = Column(String, nullable=False)  # Changed to String to allow values like "10-12", "Max", etc.
     rest_time = Column(String, nullable=False)  # Changed to String to allow values like "60", "90s", "5'", etc.
     weight = Column(Float, nullable=True)  # kg
+    equipment_number = Column(String, nullable=True)  # Equipment to use (e.g., "Machine 5", "Bench 3")
+    notes = Column(Text, nullable=True)  # PT instructions/observations for the client
     order = Column(Integer, nullable=False, default=0)
 
     # Relationships
