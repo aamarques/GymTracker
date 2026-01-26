@@ -902,7 +902,7 @@ async function createWorkoutPlanForClient(clientId) {
                         <label for="muscle-group-filter">Filter by Muscle Group</label>
                         <select id="muscle-group-filter">
                             <option value="">All Muscle Groups</option>
-                            ${muscleGroups.map(mg => `<option value="${mg}">${mg}</option>`).join('')}
+                            ${muscleGroups.map(mg => `<option value="${mg}">${t('muscle.' + mg.toLowerCase())}</option>`).join('')}
                         </select>
                     </div>
                     <div id="exercise-list"></div>
@@ -1249,7 +1249,7 @@ async function showWorkoutPlanExercises(plan, isActive) {
                     <div class="exercise-content">
                         <div class="exercise-header">
                             <h4>${index + 1}. ${pe.exercise?.name || 'Exercise'}</h4>
-                            <span class="muscle-tag">${pe.exercise?.muscle_group || ''}</span>
+                            <span class="muscle-tag">${pe.exercise?.muscle_group ? t('muscle.' + pe.exercise.muscle_group.toLowerCase()) : ''}</span>
                         </div>
                         <div class="exercise-details">
                             <div class="exercise-info">
